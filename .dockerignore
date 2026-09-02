@@ -1,0 +1,15 @@
+node_modules
+dist
+dist-ssr
+.git
+.gitignore
+*.local
+.env*
+.DS_Store
+.vscode/
+.idea/
+npm-debug.log*
+yarn-error.log*
+Dockerfile
+.dockerignore
+CLAUDE.md

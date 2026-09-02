@@ -1,0 +1,15 @@
+services:
+  web:
+    build: .
+    image: format-pretty:latest
+    container_name: format-pretty
+    ports:
+      - "${PORT:-8080}:80"
+    restart: unless-stopped
+    healthcheck:
+      # nginx:alpine ไม่มี curl ติดมา ใช้ wget ของ busybox แทน
+      test: ["CMD", "wget", "-qO", "/dev/null", "http://127.0.0.1/"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
