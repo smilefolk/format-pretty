@@ -1,0 +1,12 @@
+node_modules
+dist
+dist-ssr
+*.local
+.env*
+
+# เครื่องมือ/ระบบ
+.DS_Store
+.vscode/
+.idea/
+npm-debug.log*
+yarn-error.log*

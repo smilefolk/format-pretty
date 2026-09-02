@@ -1,0 +1,25 @@
+{
+  "name": "format-pritty",
+  "private": true,
+  "version": "1.0.0",
+  "description": "FormatPritty — เว็บจัดรูปแบบ ตรวจสอบ เปรียบเทียบ และแกะสตริง JSON ทำงานฝั่งเบราว์เซอร์ทั้งหมด",
+  "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/smilefolk/format-pretty.git"
+  },
+  "homepage": "https://github.com/smilefolk/format-pretty#readme",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.3.4",
+    "vite": "^5.4.11"
+  }
+}
