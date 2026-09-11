@@ -143,7 +143,6 @@
 }
 
 button,
-select,
 input,
 textarea {
   transition: border-color 0.15s, background 0.15s;
@@ -614,17 +613,6 @@ body {
 
 /* ---------- controls ---------- */
 
-.toolbar {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 8px;
-  padding: 10px;
-  background: var(--panel);
-  border: 1px solid var(--border);
-  border-radius: 12px;
-}
-
 .spacer {
   flex: 1;
 }
@@ -690,54 +678,13 @@ body {
   border-color: var(--border-strong);
 }
 
-kbd {
-  margin-left: 6px;
-  padding: 1px 5px;
-  border-radius: 4px;
-  /* อิงสีตัวอักษรปัจจุบัน จึงวางบนปุ่มมินต์หรือปุ่มธรรมดาก็ได้ (T0.4 จะแทนด้วย KeyCap) */
-  background: color-mix(in srgb, currentColor 14%, transparent);
-  font: 11px/1 var(--font-mono);
-}
-
-.field,
-.check {
-  display: flex;
-  align-items: center;
-  gap: 7px;
-  color: var(--muted);
-  font-size: 13px;
-}
-
-.check {
-  cursor: pointer;
-}
-
-select {
-  padding: 6px 8px;
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  background: var(--panel-2);
-  color: var(--text);
-  font: inherit;
-}
-
 /* ---------- panes ---------- */
 
-.panes {
-  flex: 1;
-  min-height: 0;
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 14px;
-}
-
+/* pane ชิดขอบ ไม่มีการ์ด — คั่นกันด้วยเส้น 1px จาก container (.workbench / .compare-inputs) */
 .pane {
   display: flex;
   flex-direction: column;
   min-height: 0;
-  background: var(--panel);
-  border: 1px solid var(--border);
-  border-radius: 12px;
   overflow: hidden;
 }
 
@@ -781,12 +728,6 @@ select {
   grid-template-columns: 1fr 1fr;
 }
 
-.workbench > .pane {
-  border: 0;
-  border-radius: 0;
-  background: transparent;
-}
-
 .workbench > .pane.source {
   border-right: 1px solid var(--border);
 }
@@ -800,28 +741,6 @@ select {
   padding: 9px 14px;
   border-top: 1px solid var(--border);
   background: var(--chrome);
-}
-
-.tabs {
-  display: flex;
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  overflow: hidden;
-}
-
-.tabs button {
-  padding: 4px 12px;
-  border: 0;
-  background: transparent;
-  color: var(--muted);
-  font: inherit;
-  font-size: 12.5px;
-  cursor: pointer;
-}
-
-.tabs button.active {
-  background: var(--accent);
-  color: var(--accent-ink);
 }
 
 /* ---------- editor / code ---------- */
@@ -939,26 +858,6 @@ textarea.input::placeholder {
   text-align: center;
 }
 
-.error {
-  margin: 14px;
-  padding: 12px 14px;
-  align-self: flex-start;
-  width: 100%;
-  border: 1px solid var(--danger);
-  border-left-width: 4px;
-  border-radius: 8px;
-  background: color-mix(in srgb, var(--danger) 10%, transparent);
-}
-
-.error strong {
-  color: var(--danger);
-}
-
-.error p {
-  margin: 6px 0 0;
-  font: 13px/1.5 var(--font-mono);
-}
-
 /* การ์ด error แบบ 1b (components/ErrorCard) — ใต้ source pane เหนือ action bar */
 .error-card {
   flex: none;
@@ -1059,28 +958,14 @@ textarea.input::placeholder {
 .tok-boolean {
   color: var(--tok-boolean);
 }
-.tok-null,
-.tok-undefined {
+.tok-null {
   color: var(--tok-null);
 }
 .tok-punct {
   color: var(--tok-punct);
 }
 
-/* ---------- status bar ---------- */
-
-.statusbar {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 14px;
-  padding: 8px 12px;
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  background: var(--panel);
-  color: var(--muted);
-  font-size: 12.5px;
-}
+/* ---------- badge (components/ui/Badge) ---------- */
 
 .badge {
   display: inline-block;
@@ -1092,14 +977,12 @@ textarea.input::placeholder {
   white-space: nowrap;
 }
 
-.badge.ok,
-.badge.merged {
+.badge.ok {
   background: color-mix(in srgb, var(--accent) 14%, transparent);
   color: var(--accent);
 }
 
-.badge.danger,
-.badge.bad {
+.badge.danger {
   background: color-mix(in srgb, var(--danger) 14%, transparent);
   color: var(--danger);
 }
@@ -1107,11 +990,6 @@ textarea.input::placeholder {
 .badge.neutral {
   background: var(--panel-2);
   color: var(--muted);
-}
-
-.muted {
-  color: var(--muted);
-  font-size: 12.5px;
 }
 
 /* ---------- UI primitives (components/ui) ---------- */
@@ -1452,12 +1330,11 @@ textarea.input::placeholder {
 }
 
 @media (max-width: 899px) {
-  .panes,
   .workbench {
     grid-template-columns: 1fr;
   }
 
-  .pane {
+  .workbench > .pane {
     min-height: 320px;
   }
 
@@ -1569,12 +1446,6 @@ textarea.input::placeholder {
   border-bottom: 1px solid var(--border);
 }
 
-.compare-inputs > .pane {
-  border: 0;
-  border-radius: 0;
-  background: transparent;
-}
-
 .compare-inputs > .pane.source {
   border-right: 1px solid var(--border);
 }
@@ -1587,9 +1458,6 @@ textarea.input::placeholder {
 .compare-page > .diff-panel {
   flex: 1;
   min-height: 0;
-  border: 0;
-  border-radius: 0;
-  background: transparent;
 }
 
 /* ช่องค้นหาเส้นทางใน header รายการต่าง */
