@@ -267,6 +267,110 @@ body {
   color: var(--text-2);
 }
 
+/* --- document tabs (DocTabs) --- */
+
+/* แถบเลื่อนแนวนอนในตัวเอง ไม่ดัน cluster ขวา; เหลื่อมลงทับเส้นล่างของ top bar 1px ให้ tab active เชื่อมกับ pane */
+.doc-tabs {
+  display: flex;
+  align-items: flex-end;
+  gap: 1px;
+  flex: 1;
+  min-width: 0;
+  align-self: stretch;
+  margin-bottom: -1px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
+}
+
+.doc-tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.doc-tab {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: none;
+  padding: 9px 14px;
+  border: 1px solid transparent;
+  border-bottom: 0;
+  border-radius: 8px 8px 0 0;
+  color: var(--muted);
+  font: 400 12px/1.2 var(--font-mono);
+  white-space: nowrap;
+  cursor: pointer;
+  user-select: none;
+}
+
+.doc-tab:hover {
+  color: var(--text-2);
+}
+
+.doc-tab.active {
+  border-color: var(--border);
+  background: var(--panel);
+  color: var(--text);
+}
+
+.doc-tab-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 99px;
+  background: var(--muted-3);
+}
+
+.doc-tab-dot.ok {
+  background: var(--accent);
+}
+
+.doc-tab-dot.danger {
+  background: var(--danger);
+}
+
+.doc-tab-close {
+  padding: 0 2px;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--disabled);
+  font: 400 13px/1 var(--font-mono);
+  cursor: pointer;
+}
+
+.doc-tab.active .doc-tab-close {
+  color: var(--muted-3);
+}
+
+.doc-tab-close:hover {
+  background: var(--panel-2);
+  color: var(--text);
+}
+
+.doc-tab-name-input {
+  width: 14ch;
+  padding: 0 4px;
+  border: 1px solid var(--border-strong);
+  border-radius: 4px;
+  background: var(--panel-2);
+  color: var(--text);
+  font: inherit;
+}
+
+.doc-tab-add {
+  flex: none;
+  padding: 9px 11px;
+  border: 0;
+  background: transparent;
+  color: var(--muted-3);
+  font: 400 13px/1.2 var(--font-mono);
+  cursor: pointer;
+}
+
+.doc-tab-add:hover {
+  color: var(--text-2);
+}
+
 /* --- tool rail --- */
 
 .tool-rail {

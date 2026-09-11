@@ -72,16 +72,30 @@ NDJSON / อ็อบเจ็กต์ที่ต่อกันให้เ�
 - `src/lib/unwrap.js` — แกะ JSON ที่ถูก escape เป็นสตริง ทีละชั้นสูงสุด 12 ชั้น รองรับทั้งแบบมีและ
   ไม่มีเครื่องหมายคำพูดครอบ ส่วน `unwrapNested()` แกะสตริง JSON ที่ซ่อนอยู่ในฟิลด์ย่อย
 
-### State ทั้งหมดอยู่ที่ `src/App.jsx`
+### State ของเนื้อหาอยู่ใน "เอกสาร" (`src/lib/docs.js` + `src/hooks/useDocs.js`)
 
-`App` เก็บ state ของทุกหน้าไว้เอง (`input`, `left`/`right`, `rawString`, `indent`, `view`, …) แล้วส่งลง
-เป็น props — เพื่อให้สลับเมนูไปมาแล้วข้อความที่พิมพ์ไว้ไม่หาย หน้าใน `src/pages/` จึงไม่ควรเก็บ
-state ของอินพุตเอง (state เฉพาะ UI เช่นตัวกรอง เก็บในหน้าได้)
+`App` ถือ `docs[]` + `activeId` ผ่าน `useDocs()` — หนึ่ง tab = เอกสารของเครื่องมือหนึ่ง (`doc.tool` เป็น
+`format` / `compare` / `unwrap`) เนื้อหา (`input`, `left`/`right`) และตัวเลือก (`indent`, `sortKeys`, `view`,
+`mergeChunks`, `deep`, `repeat`, `strategy`, `arrayKey`, `showEqual`) เป็นของแต่ละ doc `App` ส่งลงหน้าเป็น
+props รูป `value` / `setValue` (setter = `update(doc.id, { key })`) หน้าใน `src/pages/` จึงไม่ควรเก็บ state
+ของอินพุตเอง (state เฉพาะ UI เช่นตัวกรอง เก็บในหน้าได้) แต่ละหน้าถูก `key={doc.id}` ให้ได้ instance ใหม่ต่อ doc
 
-`indent` และ `view` ใช้ร่วมกันระหว่างหน้า Formatter กับ Unwrap โดยตั้งใจ
+reducer ใน `lib/docs.js` เป็น pure function ทดสอบด้วย node ได้ตรง ๆ; persist ลง `localStorage['fp-docs']`
+(debounce 300 ms, doc ที่เนื้อหารวม > 1 MB เก็บแต่ metadata + ธง `tooLarge`) อยู่ใน hook เท่านั้น
+state ระดับแอปที่ไม่อยู่ต่อเอกสาร: `theme` (`fp-theme`), `lang` (`fp-lang`), `toast`
 
-หน้าใหม่ = เพิ่มไฟล์ใน `src/pages/` + เพิ่มรายการใน `MENU` + เพิ่มบล็อก `{page === '<ชื่อ>' && …}`
-ใน `App.jsx`
+เครื่องมือที่แสดงคือ `doc.tool` ของ doc ที่ active — คลิก rail = กลับไป doc ล่าสุดของเครื่องมือนั้น
+(`openTool`) หรือสร้างใหม่ถ้ายังไม่มี; `sendToFormatter` = เปิด doc `format` ใหม่พร้อมเนื้อหา
+
+เครื่องมือใหม่ = เพิ่มไฟล์ใน `src/pages/` + เพิ่มใน `TOOLS` (`components/shell/ToolRail.jsx`) และ
+`DOC_TOOLS` (`lib/docs.js`) + เพิ่มบล็อก `{doc.tool === '<ชื่อ>' && …}` ใน `App.jsx`
+
+### Shell (`src/components/shell/`)
+
+`AppShell` = TopBar (brand · `DocTabs` · ⌘K · TH/EN · ธีม) / ToolRail 56px · เนื้อหา · options 236px /
+StatusStrip หน้าส่งเนื้อหาเข้า options panel และ status strip ผ่าน portal slot
+`<OptionsSlot>` / `<StatusSlot>` (`shell/slots.jsx`) — ตอน SSR ไม่มี container จะเรนเดอร์ว่าง ไม่พัง
+label สองภาษาใช้ `<L th en />` จาก `src/lib/i18n.jsx` (โหมด `en` ซ่อน sub-label)
 
 ### คอมโพเนนต์ที่ใช้ร่วมกัน (`src/components/`)
 
