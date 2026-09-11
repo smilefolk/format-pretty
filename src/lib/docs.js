@@ -143,7 +143,8 @@ export function latestDocForTool(state, tool) {
 const contentSize = (doc) => doc.input.length + doc.left.length + doc.right.length
 
 export function serializeDocs(state) {
-  const docs = state.docs.map((doc) => {
+  const docs = state.docs.map(({ tooLarge, ...doc }) => {
+    // ธง tooLarge คิดใหม่ทุกครั้ง — doc ที่เคยโหลดมาพร้อมธงแล้วเนื้อหาเล็กลงต้องหลุดธง
     if (contentSize(doc) <= CONTENT_LIMIT) return doc
     // ใหญ่เกิน → เก็บแต่ metadata/ตัวเลือก ติดธงไว้ให้ UI รู้ว่าเนื้อหาไม่ได้ถูกบันทึก
     return { ...doc, input: '', left: '', right: '', tooLarge: true }
