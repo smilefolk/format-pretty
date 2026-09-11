@@ -525,6 +525,14 @@ body {
   white-space: nowrap;
 }
 
+.status-strip .status-ok {
+  color: var(--accent);
+}
+
+.status-strip .status-danger {
+  color: var(--danger);
+}
+
 /* --- responsive: < 1180 options panel เป็น drawer, ปุ่มเปิดโชว์เฉพาะตอนนั้น --- */
 
 /* specificity 2 ชั้นเพื่อชนะ .icon-btn { display: grid } ที่ประกาศทีหลัง */

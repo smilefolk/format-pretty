@@ -4,7 +4,7 @@ import Editor from '../components/Editor'
 import ErrorCard from '../components/ErrorCard'
 import JsonTree from '../components/JsonTree'
 import OptionsPanel, { OptionGroup } from '../components/shell/OptionsPanel'
-import { OptionsSlot } from '../components/shell/slots'
+import { OptionsSlot, StatusSlot } from '../components/shell/slots'
 import { Badge, KeyCap, PaneHead, Segmented, StatGrid, Toggle } from '../components/ui'
 import { INDENT_OPTIONS, VIEW_OPTIONS } from '../lib/constants'
 import { useT } from '../lib/i18n'
@@ -35,6 +35,7 @@ export default function Formatter({
   )
 
   const output = useMemo(() => (result.ok ? stringify(value, indent) : ''), [result.ok, value, indent])
+  const lineEnding = input.includes('\r\n') ? 'CRLF' : 'LF'
   const stats = useMemo(() => (result.ok ? getStats(value, output) : null), [result.ok, value, output])
 
   const handleFormat = useCallback(() => {
@@ -235,24 +236,19 @@ export default function Formatter({
         </OptionsPanel>
       </OptionsSlot>
 
-      <footer className="statusbar">
+      <StatusSlot>
         {result.ok ? (
-          <>
-            <span className="badge ok">ถูกต้อง</span>
-            {result.merged > 1 && <span className="badge merged">รวม {result.merged} ก้อน → อาร์เรย์</span>}
-            <span>{stats.lines} บรรทัด</span>
-            <span>{formatBytes(stats.bytes)}</span>
-            <span>{stats.keys} คีย์</span>
-            <span>{stats.objects} อ็อบเจ็กต์</span>
-            <span>{stats.arrays} อาร์เรย์</span>
-            <span>ความลึก {stats.depth}</span>
-          </>
+          <span className="status-ok">● VALID</span>
+        ) : result.empty ? (
+          <span>○ EMPTY</span>
         ) : (
-          <span className={`badge ${result.empty ? '' : 'bad'}`}>
-            {result.empty ? 'ว่าง' : 'ผิดพลาด'}
-          </span>
+          <span className="status-danger">● INVALID</span>
         )}
-      </footer>
+        {result.merged > 1 && <span>MERGED ×{result.merged}</span>}
+        <span>UTF-8</span>
+        <span>{lineEnding}</span>
+        <span>JSON</span>
+      </StatusSlot>
     </>
   )
 }
