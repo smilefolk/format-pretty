@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef } from 'react'
+import { useMemo, useRef } from 'react'
 import CodeView from '../components/CodeView'
 import Editor from '../components/Editor'
 import ErrorCard from '../components/ErrorCard'
@@ -6,6 +6,7 @@ import JsonTree from '../components/JsonTree'
 import OptionsPanel, { OptionGroup } from '../components/shell/OptionsPanel'
 import { OptionsSlot, StatusSlot } from '../components/shell/slots'
 import { Badge, KeyCap, PaneHead, Segmented, StatGrid, Toggle } from '../components/ui'
+import { readTextFile, useFormatterActions, usePublishActions } from '../hooks/useActions'
 import { INDENT_OPTIONS, VIEW_OPTIONS } from '../lib/constants'
 import { fixJson } from '../lib/fix'
 import { useT } from '../lib/i18n'
@@ -47,59 +48,15 @@ export default function Formatter({
   const lineEnding = input.includes('\r\n') ? 'CRLF' : 'LF'
   const stats = useMemo(() => (result.ok ? getStats(value, output) : null), [result.ok, value, output])
 
-  const handleFormat = useCallback(() => {
-    if (!result.ok) return notify('JSON ไม่ถูกต้อง จัดรูปแบบไม่ได้')
-    setInput(output)
-    notify('จัดรูปแบบเรียบร้อย')
-  }, [result.ok, output, setInput, notify])
+  const actions = useFormatterActions({ result, output, value, fix, setInput, notify, fileRef })
+  usePublishActions(actions)
 
-  // D7: ไม่ auto-apply — ผู้ใช้กดเอง แล้วแจ้งให้ตรวจสอบ
-  const handleFix = () => {
-    if (!fix) return
-    setInput(fix.fixed)
-    notify(`แก้ ${fix.applied.length} จุด — ตรวจสอบก่อนใช้`)
-  }
-
-  const handleMinify = () => {
-    if (!result.ok) return notify('JSON ไม่ถูกต้อง ย่อขนาดไม่ได้')
-    setInput(JSON.stringify(value))
-    notify('ย่อขนาดเรียบร้อย')
-  }
-
-  const handleCopy = async () => {
-    if (!output) return notify('ยังไม่มีผลลัพธ์ให้คัดลอก')
-    try {
-      await navigator.clipboard.writeText(output)
-      notify('คัดลอกไปยังคลิปบอร์ดแล้ว')
-    } catch {
-      notify('คัดลอกไม่สำเร็จ')
-    }
-  }
-
-  const handleDownload = () => {
-    if (!output) return notify('ยังไม่มีผลลัพธ์ให้ดาวน์โหลด')
-    const url = URL.createObjectURL(new Blob([output], { type: 'application/json' }))
-    const a = document.createElement('a')
-    a.href = url
-    a.download = 'formatted.json'
-    a.click()
-    URL.revokeObjectURL(url)
-  }
-
-  const readFile = (file) => {
-    if (!file) return
-    const reader = new FileReader()
-    reader.onload = () => {
-      setInput(String(reader.result))
-      notify(`โหลดไฟล์ ${file.name} แล้ว`)
-    }
-    reader.readAsText(file)
-  }
+  const readFile = (file) => readTextFile(file, setInput, notify)
 
   const onKeyDown = (e) => {
     if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
       e.preventDefault()
-      handleFormat()
+      actions.format()
     }
   }
 
@@ -131,22 +88,22 @@ export default function Formatter({
               line={result.error.line}
               column={result.error.column}
               onGoTo={(line) => editorRef.current?.focusLine(line)}
-              onFix={fix ? handleFix : undefined}
+              onFix={actions.fix ?? undefined}
             />
           )}
           <div className="action-bar">
-            <button className="btn primary" onClick={handleFormat}>
+            <button className="btn primary" onClick={actions.format}>
               {t('จัดรูปแบบ', 'Format')}
               <KeyCap variant="primary">⌘↵</KeyCap>
             </button>
-            <button className="btn secondary" onClick={handleMinify}>
+            <button className="btn secondary" onClick={actions.minify}>
               {t('ย่อขนาด', 'Minify')}
             </button>
             <div className="spacer" />
-            <button className="btn ghost" onClick={() => fileRef.current?.click()}>
+            <button className="btn ghost" onClick={actions.openFile}>
               {t('เปิดไฟล์', 'Open file')}
             </button>
-            <button className="btn ghost" onClick={() => setInput('')}>
+            <button className="btn ghost" onClick={actions.clear}>
               {t('ล้าง', 'Clear')}
             </button>
             <input
@@ -176,10 +133,10 @@ export default function Formatter({
               )
             }
           >
-            <button className="btn small" onClick={handleCopy}>
+            <button className="btn small" onClick={actions.copy}>
               {t('คัดลอก', 'Copy')}
             </button>
-            <button className="btn small" onClick={handleDownload}>
+            <button className="btn small" onClick={actions.download}>
               {t('ดาวน์โหลด', 'Download')}
             </button>
           </PaneHead>

@@ -3,30 +3,10 @@ import Editor from '../components/Editor'
 import OptionsPanel, { OptionGroup } from '../components/shell/OptionsPanel'
 import { OptionsSlot, StatusSlot } from '../components/shell/slots'
 import { Badge, PaneHead, Segmented, Toggle } from '../components/ui'
+import { useCompareActions, usePublishActions } from '../hooks/useActions'
 import { countKeys, diffJsonWithMeta, preview, summarize, toReport, typeLabel } from '../lib/diff'
 import { useT } from '../lib/i18n'
 import { parseJson } from '../lib/json'
-
-// ตัวอย่างสำหรับ command palette (#34) — ปุ่มตัวอย่างออกจากหน้าแล้วตาม D4
-export const SAMPLE_LEFT = `{
-  "id": 1024,
-  "name": "Somchai",
-  "active": true,
-  "score": 87,
-  "roles": ["admin", "editor"],
-  "profile": { "city": "Bangkok", "zip": "10110" },
-  "legacyField": "ยังอยู่ในก้อนซ้าย"
-}`
-
-export const SAMPLE_RIGHT = `{
-  "id": "1024",
-  "name": "Somchai",
-  "active": false,
-  "score": 87,
-  "roles": ["admin", "viewer", "billing"],
-  "profile": { "city": "Chiang Mai", "zip": "10110" },
-  "newField": "เพิ่มเข้ามาในก้อนขวา"
-}`
 
 // ลำดับชนิดในตัวกรองและแถบสัดส่วน (ตรง mock 3a)
 const TYPES = ['changed', 'type', 'removed', 'added']
@@ -95,29 +75,17 @@ export default function Compare({
       (!needle || d.path.toLowerCase().includes(needle))
   )
 
-  const handleSwap = () => {
-    setLeft(right)
-    setRight(left)
-  }
-
-  const handleCopyReport = async () => {
-    if (!pair.ready) return notify('ต้องมี JSON ที่ถูกต้องทั้งสองฝั่งก่อน')
-    try {
-      await navigator.clipboard.writeText(toReport(diffs))
-      notify('คัดลอกรายงานแล้ว')
-    } catch {
-      notify('คัดลอกไม่สำเร็จ')
-    }
-  }
-
-  const copyPath = async (path) => {
-    try {
-      await navigator.clipboard.writeText(path)
-      notify(`คัดลอก ${path} แล้ว`)
-    } catch {
-      notify('คัดลอกไม่สำเร็จ')
-    }
-  }
+  const actions = useCompareActions({
+    left,
+    right,
+    setLeft,
+    setRight,
+    ready: pair.ready,
+    diffs,
+    toReport,
+    notify,
+  })
+  usePublishActions(actions)
 
   const sideBadge = (result) =>
     result.empty ? (
@@ -150,7 +118,7 @@ export default function Compare({
           </section>
           <section className="pane">
             <PaneHead th="ก้อนขวา" en="Right" badge={sideBadge(rightResult)}>
-              <button className="btn small" onClick={handleSwap}>
+              <button className="btn small" onClick={actions.swap}>
                 {t('สลับซ้าย–ขวา', 'Swap sides')}
               </button>
             </PaneHead>
@@ -188,7 +156,7 @@ export default function Compare({
               placeholder={t('ค้นหาเส้นทาง…', 'Search path…')}
               aria-label={t('ค้นหาเส้นทาง', 'Search path')}
             />
-            <button className="btn small" onClick={handleCopyReport}>
+            <button className="btn small" onClick={actions.copyReport}>
               {t('คัดลอกรายงาน', 'Copy report')}
             </button>
           </PaneHead>
@@ -231,11 +199,11 @@ export default function Compare({
                         className={`diff-row ${d.type}`}
                         role="button"
                         tabIndex={0}
-                        onClick={() => copyPath(d.path)}
+                        onClick={() => actions.copyPath(d.path)}
                         onKeyDown={(e) => {
                           if (e.key === 'Enter' || e.key === ' ') {
                             e.preventDefault()
-                            copyPath(d.path)
+                            actions.copyPath(d.path)
                           }
                         }}
                         title={t('คลิกเพื่อคัดลอกเส้นทาง', 'Click to copy the path')}

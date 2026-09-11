@@ -6,16 +6,11 @@ import JsonTree from '../components/JsonTree'
 import OptionsPanel, { OptionGroup } from '../components/shell/OptionsPanel'
 import { OptionsSlot, StatusSlot } from '../components/shell/slots'
 import { Badge, KeyCap, PaneHead, Segmented, StatGrid, Toggle } from '../components/ui'
+import { readTextFile, usePublishActions, useUnwrapActions } from '../hooks/useActions'
 import { INDENT_OPTIONS, VIEW_OPTIONS } from '../lib/constants'
 import { useLang, useT } from '../lib/i18n'
 import { formatBytes, getStats, stringify } from '../lib/json'
 import { unwrapJson, unwrapNested } from '../lib/unwrap'
-
-// ปุ่ม "ตัวอย่าง" สลับสองชุดนี้ (และ palette #34 ใช้ต่อ)
-export const SAMPLE = `"{\\"order_id\\":\\"A-1024\\",\\"items\\":[{\\"sku\\":\\"X1\\",\\"qty\\":2},{\\"sku\\":\\"Y7\\",\\"qty\\":1}],\\"paid\\":true,\\"note\\":null}"`
-
-// ตัวอย่างซ้อน: สตริงชั้นนอก → ฟิลด์ payload → ฟิลด์ customer (chain 3 ชั้นตรง mock 3b)
-export const SAMPLE_NESTED = `"{\\"event\\":\\"order.created\\",\\"ts\\":\\"2026-09-02T10:20:30Z\\",\\"payload\\":\\"{\\\\\\"order_id\\\\\\":\\\\\\"A-1024\\\\\\",\\\\\\"customer\\\\\\":\\\\\\"{\\\\\\\\\\\\\\"id\\\\\\\\\\\\\\":7,\\\\\\\\\\\\\\"tier\\\\\\\\\\\\\\":\\\\\\\\\\\\\\"gold\\\\\\\\\\\\\\"}\\\\\\"}\\"}"`
 
 // ชื่อฟิลด์ท้ายสุดของ path สำหรับ chip ใน chain (path เต็มอยู่ใน title) — จุดในเครื่องหมายคำพูดไม่นับ
 function lastSegment(path) {
@@ -70,50 +65,25 @@ export default function Unwrap({
 
   const stats = useMemo(() => (result.ok ? getStats(nested.value, output) : null), [result.ok, nested.value, output])
 
-  const handleCopy = async () => {
-    if (!output) return notify('ยังไม่มีผลลัพธ์ให้คัดลอก')
-    try {
-      await navigator.clipboard.writeText(output)
-      notify('คัดลอกไปยังคลิปบอร์ดแล้ว')
-    } catch {
-      notify('คัดลอกไม่สำเร็จ')
-    }
-  }
-
-  const handleDownload = () => {
-    if (!output) return notify('ยังไม่มีผลลัพธ์ให้ดาวน์โหลด')
-    const url = URL.createObjectURL(new Blob([output], { type: 'application/json' }))
-    const a = document.createElement('a')
-    a.href = url
-    a.download = 'unwrapped.json'
-    a.click()
-    URL.revokeObjectURL(url)
-  }
-
-  // D5(a): แกะแล้วเขียนผลทับช่องซ้าย (เหมือน "จัดรูปแบบ" ของ Formatter)
-  const handleUnwrap = () => {
-    if (!result.ok) return notify(result.empty ? 'ยังไม่มีข้อมูลให้แกะ' : 'แกะเป็น JSON ไม่ได้')
-    if (chain.length === 0) return notify('ข้อมูลนี้เป็น JSON อยู่แล้ว ไม่ต้องแกะ')
-    setInput(output)
-    notify(`แกะสตริง ${chain.length} ชั้นเรียบร้อย`)
-  }
+  const actions = useUnwrapActions({
+    input,
+    result,
+    output,
+    layers: chain.length,
+    setInput,
+    notify,
+    sendToFormatter,
+  })
+  usePublishActions(actions)
 
   const onKeyDown = (e) => {
     if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
       e.preventDefault()
-      handleUnwrap()
+      actions.unwrap()
     }
   }
 
-  const readFile = (file) => {
-    if (!file) return
-    const reader = new FileReader()
-    reader.onload = () => {
-      setInput(String(reader.result))
-      notify(`โหลดไฟล์ ${file.name} แล้ว`)
-    }
-    reader.readAsText(file)
-  }
+  const readFile = (file) => readTextFile(file, setInput, notify)
 
   return (
     <>
@@ -162,19 +132,19 @@ export default function Unwrap({
             </div>
           )}
           <div className="action-bar">
-            <button className="btn primary" onClick={handleUnwrap}>
+            <button className="btn primary" onClick={actions.unwrap}>
               {t('แกะสตริง', 'Unwrap')}
               <KeyCap variant="primary">⌘↵</KeyCap>
             </button>
             <div className="spacer" />
             <button
               className="btn ghost"
-              onClick={() => setInput(input === SAMPLE ? SAMPLE_NESTED : SAMPLE)}
+              onClick={actions.sample}
               title={t('สลับตัวอย่างธรรมดา / ซ้อนในฟิลด์', 'Toggle simple / nested sample')}
             >
               {t('ตัวอย่าง', 'Sample')}
             </button>
-            <button className="btn ghost" onClick={() => setInput('')}>
+            <button className="btn ghost" onClick={actions.clear}>
               {t('ล้าง', 'Clear')}
             </button>
           </div>
@@ -198,10 +168,10 @@ export default function Unwrap({
               )
             }
           >
-            <button className="btn small" onClick={handleCopy}>
+            <button className="btn small" onClick={actions.copy}>
               {t('คัดลอก', 'Copy')}
             </button>
-            <button className="btn small" onClick={handleDownload}>
+            <button className="btn small" onClick={actions.download}>
               {t('ดาวน์โหลด', 'Download')}
             </button>
           </PaneHead>
@@ -256,7 +226,7 @@ export default function Unwrap({
           <div className="action-bar">
             <button
               className="btn secondary"
-              onClick={() => (output ? sendToFormatter(output) : notify('ยังไม่มีผลลัพธ์'))}
+              onClick={actions.sendToFormatter}
             >
               {t('ส่งไปหน้าจัดรูปแบบ', 'Send to Formatter')}
             </button>
