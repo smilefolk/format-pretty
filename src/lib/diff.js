@@ -4,6 +4,8 @@
 // (path ตาม D6: `$.items[id=7]`, สตริง → `$.items[sku="X1"]`) — อาร์เรย์ที่จับคู่ไม่ได้จะ fallback เป็น index
 // เฉพาะอาร์เรย์นั้น และรายงาน path ไว้ใน `fallbacks` ของ diffJsonWithMeta()
 
+import { childPath } from './path'
+
 function kindOf(value) {
   if (value === null) return 'null'
   if (Array.isArray(value)) return 'array'
@@ -11,13 +13,6 @@ function kindOf(value) {
 }
 
 const isContainer = (kind) => kind === 'object' || kind === 'array'
-
-const IDENT_RE = /^[A-Za-z_$][A-Za-z0-9_$]*$/
-
-function childPath(path, key) {
-  if (typeof key === 'number') return `${path}[${key}]`
-  return IDENT_RE.test(key) ? `${path}.${key}` : `${path}[${JSON.stringify(key)}]`
-}
 
 // ทำดัชนีสมาชิกอาร์เรย์ด้วยค่าคีย์ — คืน null ถ้าไม่เข้าเงื่อนไข (มีสมาชิกที่ไม่ใช่อ็อบเจ็กต์, ไม่มีคีย์,
 // ค่าคีย์ไม่ใช่ string/number, หรือค่าคีย์ซ้ำ) — id เป็น JSON.stringify จึงแยก 7 กับ "7" ออกจากกัน

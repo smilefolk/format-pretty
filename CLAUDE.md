@@ -76,8 +76,12 @@ NDJSON / อ็อบเจ็กต์ที่ต่อกันให้เ�
   เพื่อจับคู่ด้วยค่าคีย์ (path `$.items[id=7]` / `$.items[sku="X1"]`) อาร์เรย์ที่จับคู่ไม่ได้ fallback เป็น index
   เฉพาะอาร์เรย์นั้น — `diffJsonWithMeta()` คืน `{ diffs, fallbacks }` ให้ UI แสดง notice;
   `countKeys()` นับใบที่ตรงกัน/รวม สำหรับการ์ดสรุป; `summarize()` / `toReport()` ไม่นับ `equal`
-- `src/lib/unwrap.js` — แกะ JSON ที่ถูก escape เป็นสตริง ทีละชั้นสูงสุด 12 ชั้น รองรับทั้งแบบมีและ
-  ไม่มีเครื่องหมายคำพูดครอบ ส่วน `unwrapNested()` แกะสตริง JSON ที่ซ่อนอยู่ในฟิลด์ย่อย
+- `src/lib/unwrap.js` — `unwrapJson()` แกะ JSON ที่ถูก escape เป็นสตริง ทีละชั้นสูงสุด 12 ชั้น รองรับทั้งแบบมีและ
+  ไม่มีเครื่องหมายคำพูดครอบ คืน `layers` (ตัวเลข) + `peels[{ n, where:'string' }]`; `unwrapNested(value, { repeat })`
+  แกะสตริง JSON ที่ซ่อนอยู่ในฟิลด์ย่อย คืน `{ value, count, fields[{ path, depth }], passes }` — หนึ่งรอบแกะ
+  สตริง→อ็อบเจ็กต์จนสุด แต่สตริง→สตริง (escape ซ้อน) แกะทีละชั้น `repeat:true` วนจนนิ่ง (≤ 8 รอบ)
+- `src/lib/path.js` — `childPath(path, key)` สร้าง path `$.a[0]["k y"]` ใช้ร่วมกันใน `diff.js` (root `$`) และ
+  `unwrap.js` (root `''`)
 
 ### State ของเนื้อหาอยู่ใน "เอกสาร" (`src/lib/docs.js` + `src/hooks/useDocs.js`)
 
