@@ -2,8 +2,8 @@ import { useCallback, useMemo, useRef } from 'react'
 import CodeView from '../components/CodeView'
 import Editor from '../components/Editor'
 import JsonTree from '../components/JsonTree'
-import { KeyCap, PaneHead } from '../components/ui'
-import { L, useT } from '../lib/i18n'
+import { Badge, KeyCap, PaneHead } from '../components/ui'
+import { useT } from '../lib/i18n'
 import { formatBytes, getStats, parseJson, sortKeysDeep, stringify } from '../lib/json'
 
 const INDENTS = [
@@ -138,30 +138,31 @@ export default function Formatter({
         </section>
 
         <section className="pane">
-          <div className="pane-head">
-            <h2>
-              <L th="ผลลัพธ์" en="Output" />
-            </h2>
-            <div className="tabs">
-              <button className={view === 'code' ? 'active' : ''} onClick={() => setView('code')}>
-                โค้ด
-              </button>
-              <button className={view === 'tree' ? 'active' : ''} onClick={() => setView('tree')}>
-                โครงสร้าง
-              </button>
-            </div>
-            <div className="pane-actions">
-              <button className="btn small" onClick={handleCopy}>
-                คัดลอก
-              </button>
-              <button className="btn small" onClick={handleDownload}>
-                ดาวน์โหลด
-              </button>
-            </div>
-          </div>
+          <PaneHead
+            th="ผลลัพธ์"
+            en="Output"
+            badge={
+              result.ok ? (
+                <Badge variant="ok">{t('ถูกต้อง', 'Valid')}</Badge>
+              ) : result.empty ? (
+                <Badge variant="neutral">{t('ว่าง', 'Empty')}</Badge>
+              ) : (
+                <Badge variant="danger">{t('ผิดพลาด', 'Invalid')}</Badge>
+              )
+            }
+          >
+            <button className="btn small" onClick={handleCopy}>
+              {t('คัดลอก', 'Copy')}
+            </button>
+            <button className="btn small" onClick={handleDownload}>
+              {t('ดาวน์โหลด', 'Download')}
+            </button>
+          </PaneHead>
 
           <div className="output">
-            {result.empty && <p className="placeholder">ยังไม่มีข้อมูล — วาง JSON ที่ช่องด้านซ้าย</p>}
+            {result.empty && (
+              <p className="placeholder">{t('ยังไม่มีข้อมูล — วาง JSON ที่ช่องด้านซ้าย', 'Nothing yet — paste JSON on the left')}</p>
+            )}
             {result.error && (
               <div className="error">
                 <strong>JSON ไม่ถูกต้อง</strong>
@@ -176,7 +177,12 @@ export default function Formatter({
             {result.ok && (
               <div className="result">
                 {result.merged > 1 && (
-                  <p className="notice">พบ JSON {result.merged} ก้อนต่อกัน — รวมเป็นอาร์เรย์เดียวให้แล้ว</p>
+                  <p className="notice">
+                    {t(
+                      `พบ JSON ${result.merged} ก้อนต่อกัน — รวมเป็นอาร์เรย์เดียวให้แล้ว`,
+                      `Found ${result.merged} JSON chunks — merged into one array`
+                    )}
+                  </p>
                 )}
                 {view === 'code' ? <CodeView code={output} /> : <JsonTree data={value} />}
               </div>

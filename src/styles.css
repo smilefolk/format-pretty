@@ -913,15 +913,18 @@ textarea.input::placeholder {
   top: 0;
   z-index: 1;
   margin: 0;
-  padding: 8px 12px;
-  border-bottom: 1px solid var(--border);
-  background: color-mix(in srgb, var(--accent) 16%, var(--panel));
-  font-size: 12.5px;
+  padding: 8px 14px;
+  border-bottom: 1px solid var(--border-soft);
+  background: color-mix(in srgb, var(--accent) 12%, var(--bg));
+  font-size: 12px;
 }
 
 .placeholder {
   margin: auto;
+  padding: 0 14px;
   color: var(--muted);
+  font-size: 12.5px;
+  text-align: center;
 }
 
 .error {
@@ -948,8 +951,8 @@ textarea.input::placeholder {
 
 .tree {
   flex: 1;
-  padding: 12px;
-  font: 13px/1.7 var(--font-mono);
+  padding: 11px 14px;
+  font: 400 12px/1.7 var(--font-mono);
 }
 
 .tree-row {
@@ -968,10 +971,10 @@ textarea.input::placeholder {
 
 .tree-count {
   margin: 0 6px;
-  padding: 0 6px;
-  border-radius: 20px;
+  padding: 1px 8px;
+  border-radius: 99px;
   background: var(--panel-2);
-  color: var(--muted);
+  color: var(--muted-2);
   font-size: 11.5px;
 }
 
