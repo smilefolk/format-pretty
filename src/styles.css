@@ -197,6 +197,63 @@ body {
   font-size: 12.5px;
 }
 
+/* ---------- label สองภาษา (lib/i18n.jsx) ---------- */
+
+.l {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 7px;
+}
+
+.l.stack {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 3px;
+}
+
+/* sub-label อังกฤษ: mono ตัวพิมพ์ใหญ่ เล็กกว่าไทย — `panel` คือขนาดใน options panel */
+.l-en {
+  font: 500 9.5px/1 var(--font-mono);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted-3);
+}
+
+.l-en.panel {
+  font-size: 9px;
+  letter-spacing: 0.06em;
+}
+
+.lang-switch {
+  display: flex;
+  padding: 2px;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  background: var(--panel-2);
+}
+
+.lang-switch button {
+  padding: 3px 8px;
+  border: 0;
+  border-radius: 5px;
+  background: transparent;
+  color: var(--muted-3);
+  font: 500 10.5px/1.4 var(--font-mono);
+  cursor: pointer;
+}
+
+.lang-switch button.active {
+  background: var(--border);
+  color: var(--text);
+  font-weight: 600;
+}
+
+.header-tools {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
 /* ---------- controls ---------- */
 
 .toolbar {

@@ -2,6 +2,7 @@ import { useCallback, useMemo, useRef } from 'react'
 import CodeView from '../components/CodeView'
 import Editor from '../components/Editor'
 import JsonTree from '../components/JsonTree'
+import { L } from '../lib/i18n'
 import { formatBytes, getStats, parseJson, sortKeysDeep, stringify } from '../lib/json'
 
 const SAMPLE = `{"name":"FormatPritty","version":"1.0.0","tags":["json","formatter","react"],"config":{"indent":2,"sortKeys":false,"theme":"dark"},"stats":{"users":1284,"rating":4.8,"active":true,"deprecated":null},"authors":[{"name":"Somchai","role":"dev"},{"name":"Malee","role":"design"}]}`
@@ -133,7 +134,9 @@ export default function Formatter({ input, setInput, indent, setIndent, sortKeys
       <main className="panes">
         <section className="pane">
           <div className="pane-head">
-            <h2>ต้นฉบับ</h2>
+            <h2>
+              <L th="ต้นฉบับ" en="Source" />
+            </h2>
             <span className="muted">
               {input.split('\n').length} บรรทัด · {formatBytes(new Blob([input]).size)}
             </span>
@@ -153,7 +156,9 @@ export default function Formatter({ input, setInput, indent, setIndent, sortKeys
 
         <section className="pane">
           <div className="pane-head">
-            <h2>ผลลัพธ์</h2>
+            <h2>
+              <L th="ผลลัพธ์" en="Output" />
+            </h2>
             <div className="tabs">
               <button className={view === 'code' ? 'active' : ''} onClick={() => setView('code')}>
                 โค้ด

@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import CodeView from '../components/CodeView'
 import Editor from '../components/Editor'
 import JsonTree from '../components/JsonTree'
+import { L } from '../lib/i18n'
 import { formatBytes, getStats, stringify } from '../lib/json'
 import { unwrapJson, unwrapNested } from '../lib/unwrap'
 
@@ -103,7 +104,9 @@ export default function Unwrap({ input, setInput, indent, setIndent, view, setVi
       <main className="panes">
         <section className="pane">
           <div className="pane-head">
-            <h2>สตริง JSON</h2>
+            <h2>
+              <L th="สตริง JSON" en="JSON string" />
+            </h2>
             <span className="muted">
               {input.split('\n').length} บรรทัด · {formatBytes(new Blob([input]).size)}
             </span>
@@ -122,7 +125,9 @@ export default function Unwrap({ input, setInput, indent, setIndent, view, setVi
 
         <section className="pane">
           <div className="pane-head">
-            <h2>ผลลัพธ์ JSON</h2>
+            <h2>
+              <L th="ผลลัพธ์ JSON" en="Result" />
+            </h2>
             <div className="tabs">
               <button className={view === 'code' ? 'active' : ''} onClick={() => setView('code')}>
                 โค้ด
