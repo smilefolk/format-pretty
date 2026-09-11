@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useT } from '../lib/i18n'
 
 function typeOf(value) {
   if (value === null) return 'null'
@@ -13,6 +14,7 @@ function Leaf({ value }) {
 }
 
 function Node({ name, value, depth, defaultOpen }) {
+  const tr = useT()
   const [open, setOpen] = useState(depth < defaultOpen)
   const t = typeOf(value)
   const isBranch = t === 'object' || t === 'array'
@@ -37,7 +39,7 @@ function Node({ name, value, depth, defaultOpen }) {
           className="tree-toggle"
           onClick={() => setOpen((o) => !o)}
           aria-expanded={open}
-          aria-label={open ? 'ยุบ' : 'ขยาย'}
+          aria-label={open ? tr('ยุบ', 'Collapse') : tr('ขยาย', 'Expand')}
         >
           {open ? '▾' : '▸'}
         </button>
@@ -47,7 +49,7 @@ function Node({ name, value, depth, defaultOpen }) {
         {!open && (
           <>
             <span className="tree-count">
-              {entries.length} {t === 'array' ? 'รายการ' : 'คีย์'}
+              {entries.length} {t === 'array' ? tr('รายการ', 'items') : tr('คีย์', 'keys')}
             </span>
             <span className="tok-punct">{closeB}</span>
           </>

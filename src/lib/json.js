@@ -2,7 +2,9 @@
 
 import { lineColumnAt, scanDocuments } from './locate'
 
-export function parseJson(text) {
+// options.merge (default true) — พบ JSON หลายก้อนต่อกันให้รวมเป็นอาร์เรย์; ปิดแล้วจะรายงานเป็น error
+// ชี้ที่ต้นก้อนที่สอง (shape ผลลัพธ์เหมือนเดิมทุกกรณี — ทั้ง 3 หน้าอ่าน error.line / merged)
+export function parseJson(text, { merge = true } = {}) {
   if (!text.trim()) return { ok: false, empty: true, error: null }
 
   // ทางลัด: เอกสารเดียวที่ถูกต้อง ให้ JSON.parse จัดการ (เร็วที่สุด)
@@ -11,8 +13,17 @@ export function parseJson(text) {
   } catch (nativeError) {
     const { parts, error } = scanDocuments(text)
 
-    // มีค่า JSON มากกว่าหนึ่งก้อนต่อกัน — รวมให้เป็นอาร์เรย์เดียว
+    // มีค่า JSON มากกว่าหนึ่งก้อนต่อกัน — รวมให้เป็นอาร์เรย์เดียว (หรือแจ้งถ้าผู้ใช้ปิดการรวม)
     if (!error && parts.length > 1) {
+      if (!merge) {
+        return {
+          ok: false,
+          error: {
+            message: 'พบ JSON มากกว่าหนึ่งก้อน — เปิด "รวมหลายก้อนเป็นอาร์เรย์" หรือลบก้อนที่เกิน',
+            ...lineColumnAt(text, parts[1].start),
+          },
+        }
+      }
       const values = parts.map((part) => JSON.parse(text.slice(part.start, part.end)))
       return { ok: true, value: values, merged: values.length }
     }

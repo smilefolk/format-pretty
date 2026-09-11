@@ -3,18 +3,13 @@ import CodeView from '../components/CodeView'
 import Editor from '../components/Editor'
 import JsonTree from '../components/JsonTree'
 import { L } from '../lib/i18n'
+import { INDENT_OPTIONS } from '../lib/constants'
 import { formatBytes, getStats, stringify } from '../lib/json'
 import { unwrapJson, unwrapNested } from '../lib/unwrap'
 
 const SAMPLE = `"{\\"order_id\\":\\"A-1024\\",\\"items\\":[{\\"sku\\":\\"X1\\",\\"qty\\":2},{\\"sku\\":\\"Y7\\",\\"qty\\":1}],\\"paid\\":true,\\"note\\":null}"`
 
 const SAMPLE_NESTED = `{"event":"order.created","ts":"2026-09-02T10:20:30Z","payload":"{\\"order_id\\":\\"A-1024\\",\\"customer\\":\\"{\\\\\\"id\\\\\\":7,\\\\\\"tier\\\\\\":\\\\\\"gold\\\\\\"}\\"}"}`
-
-const INDENTS = [
-  { value: '2', label: '2 ช่อง' },
-  { value: '4', label: '4 ช่อง' },
-  { value: 'tab', label: 'แท็บ' },
-]
 
 export default function Unwrap({ input, setInput, indent, setIndent, view, setView, notify, sendToFormatter }) {
   const [deep, setDeep] = useState(true)
@@ -64,7 +59,7 @@ export default function Unwrap({ input, setInput, indent, setIndent, view, setVi
   }
 
   return (
-    <>
+    <div className="legacy-page">
       <div className="toolbar">
         <label className="check">
           <input type="checkbox" checked={deep} onChange={(e) => setDeep(e.target.checked)} />
@@ -74,9 +69,9 @@ export default function Unwrap({ input, setInput, indent, setIndent, view, setVi
         <label className="field">
           ระยะเยื้อง
           <select value={indent} onChange={(e) => setIndent(e.target.value)}>
-            {INDENTS.map((i) => (
+            {INDENT_OPTIONS.map((i) => (
               <option key={i.value} value={i.value}>
-                {i.label}
+                {i.mono ? `${i.th} ช่อง` : i.th}
               </option>
             ))}
           </select>
@@ -203,6 +198,6 @@ export default function Unwrap({ input, setInput, indent, setIndent, view, setVi
           <span className={`badge ${result.empty ? '' : 'bad'}`}>{result.empty ? 'ว่าง' : 'แกะไม่สำเร็จ'}</span>
         )}
       </footer>
-    </>
+    </div>
   )
 }

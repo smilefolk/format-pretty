@@ -100,7 +100,7 @@ export default function Compare({ left, setLeft, right, setRight, notify }) {
   )
 
   return (
-    <>
+    <div className="legacy-page">
       <div className="toolbar">
         <div className="tabs">
           {FILTERS.map((f) => (
@@ -254,6 +254,6 @@ export default function Compare({ left, setLeft, right, setRight, notify }) {
           <span className="badge">รอข้อมูล</span>
         )}
       </footer>
-    </>
+    </div>
   )
 }

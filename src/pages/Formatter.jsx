@@ -1,26 +1,33 @@
 import { useCallback, useMemo, useRef } from 'react'
 import CodeView from '../components/CodeView'
 import Editor from '../components/Editor'
+import ErrorCard from '../components/ErrorCard'
 import JsonTree from '../components/JsonTree'
-import { L } from '../lib/i18n'
+import OptionsPanel, { OptionGroup } from '../components/shell/OptionsPanel'
+import { OptionsSlot, StatusSlot } from '../components/shell/slots'
+import { Badge, KeyCap, PaneHead, Segmented, StatGrid, Toggle } from '../components/ui'
+import { INDENT_OPTIONS, VIEW_OPTIONS } from '../lib/constants'
+import { useT } from '../lib/i18n'
 import { formatBytes, getStats, parseJson, sortKeysDeep, stringify } from '../lib/json'
 
-const SAMPLE = `{"name":"FormatPritty","version":"1.0.0","tags":["json","formatter","react"],"config":{"indent":2,"sortKeys":false,"theme":"dark"},"stats":{"users":1284,"rating":4.8,"active":true,"deprecated":null},"authors":[{"name":"Somchai","role":"dev"},{"name":"Malee","role":"design"}]}`
-
-const SAMPLE_MULTI = `{"id":1,"user":"somchai","action":"login"}
-{"id":2,"user":"malee","action":"upload","size":4821}
-{"id":3,"user":"somchai","action":"logout"}`
-
-const INDENTS = [
-  { value: '2', label: '2 ช่อง' },
-  { value: '4', label: '4 ช่อง' },
-  { value: 'tab', label: 'แท็บ' },
-]
-
-export default function Formatter({ input, setInput, indent, setIndent, sortKeys, setSortKeys, view, setView, notify }) {
+export default function Formatter({
+  input,
+  setInput,
+  indent,
+  setIndent,
+  sortKeys,
+  setSortKeys,
+  mergeChunks,
+  setMergeChunks,
+  view,
+  setView,
+  notify,
+}) {
+  const t = useT()
   const fileRef = useRef(null)
+  const editorRef = useRef(null)
 
-  const result = useMemo(() => parseJson(input), [input])
+  const result = useMemo(() => parseJson(input, { merge: mergeChunks }), [input, mergeChunks])
 
   const value = useMemo(
     () => (result.ok && sortKeys ? sortKeysDeep(result.value) : result.value),
@@ -28,6 +35,7 @@ export default function Formatter({ input, setInput, indent, setIndent, sortKeys
   )
 
   const output = useMemo(() => (result.ok ? stringify(value, indent) : ''), [result.ok, value, indent])
+  const lineEnding = input.includes('\r\n') ? 'CRLF' : 'LF'
   const stats = useMemo(() => (result.ok ? getStats(value, output) : null), [result.ok, value, output])
 
   const handleFormat = useCallback(() => {
@@ -81,67 +89,15 @@ export default function Formatter({ input, setInput, indent, setIndent, sortKeys
 
   return (
     <>
-      <div className="toolbar">
-        <button className="btn primary" onClick={handleFormat}>
-          จัดรูปแบบ <kbd>⌘↵</kbd>
-        </button>
-        <button className="btn" onClick={handleMinify}>
-          ย่อขนาด
-        </button>
-
-        <label className="field">
-          ระยะเยื้อง
-          <select value={indent} onChange={(e) => setIndent(e.target.value)}>
-            {INDENTS.map((i) => (
-              <option key={i.value} value={i.value}>
-                {i.label}
-              </option>
-            ))}
-          </select>
-        </label>
-
-        <label className="check">
-          <input type="checkbox" checked={sortKeys} onChange={(e) => setSortKeys(e.target.checked)} />
-          เรียงคีย์ A→Z
-        </label>
-
-        <div className="spacer" />
-
-        <button className="btn" onClick={() => fileRef.current?.click()}>
-          เปิดไฟล์
-        </button>
-        <button className="btn" onClick={() => setInput(SAMPLE)}>
-          ตัวอย่าง
-        </button>
-        <button className="btn" onClick={() => setInput(SAMPLE_MULTI)}>
-          ตัวอย่างหลายก้อน
-        </button>
-        <button className="btn" onClick={() => setInput('')}>
-          ล้าง
-        </button>
-        <input
-          ref={fileRef}
-          type="file"
-          accept=".json,.txt,application/json"
-          hidden
-          onChange={(e) => {
-            readFile(e.target.files?.[0])
-            e.target.value = ''
-          }}
-        />
-      </div>
-
-      <main className="panes">
-        <section className="pane">
-          <div className="pane-head">
-            <h2>
-              <L th="ต้นฉบับ" en="Source" />
-            </h2>
-            <span className="muted">
-              {input.split('\n').length} บรรทัด · {formatBytes(new Blob([input]).size)}
+      <div className="workbench">
+        <section className="pane source">
+          <PaneHead th="ต้นฉบับ" en="Source">
+            <span className="pane-meta">
+              {input.split('\n').length} {t('บรรทัด', 'lines')} · {formatBytes(new Blob([input]).size)}
             </span>
-          </div>
+          </PaneHead>
           <Editor
+            ref={editorRef}
             value={input}
             onChange={setInput}
             errorLine={result.error?.line}
@@ -152,74 +108,147 @@ export default function Formatter({ input, setInput, indent, setIndent, sortKeys
               'วางหลายก้อนต่อกันได้ (NDJSON หรือคั่นด้วย ,) ระบบจะรวมเป็นอาร์เรย์ให้อัตโนมัติ'
             }
           />
+          {result.error && (
+            <ErrorCard
+              title={t('JSON ไม่ถูกต้อง', 'Invalid JSON')}
+              message={result.error.message}
+              line={result.error.line}
+              column={result.error.column}
+              onGoTo={(line) => editorRef.current?.focusLine(line)}
+            />
+          )}
+          <div className="action-bar">
+            <button className="btn primary" onClick={handleFormat}>
+              {t('จัดรูปแบบ', 'Format')}
+              <KeyCap variant="primary">⌘↵</KeyCap>
+            </button>
+            <button className="btn secondary" onClick={handleMinify}>
+              {t('ย่อขนาด', 'Minify')}
+            </button>
+            <div className="spacer" />
+            <button className="btn ghost" onClick={() => fileRef.current?.click()}>
+              {t('เปิดไฟล์', 'Open file')}
+            </button>
+            <button className="btn ghost" onClick={() => setInput('')}>
+              {t('ล้าง', 'Clear')}
+            </button>
+            <input
+              ref={fileRef}
+              type="file"
+              accept=".json,.txt,application/json"
+              hidden
+              onChange={(e) => {
+                readFile(e.target.files?.[0])
+                e.target.value = ''
+              }}
+            />
+          </div>
         </section>
 
         <section className="pane">
-          <div className="pane-head">
-            <h2>
-              <L th="ผลลัพธ์" en="Output" />
-            </h2>
-            <div className="tabs">
-              <button className={view === 'code' ? 'active' : ''} onClick={() => setView('code')}>
-                โค้ด
-              </button>
-              <button className={view === 'tree' ? 'active' : ''} onClick={() => setView('tree')}>
-                โครงสร้าง
-              </button>
-            </div>
-            <div className="pane-actions">
-              <button className="btn small" onClick={handleCopy}>
-                คัดลอก
-              </button>
-              <button className="btn small" onClick={handleDownload}>
-                ดาวน์โหลด
-              </button>
-            </div>
-          </div>
+          <PaneHead
+            th="ผลลัพธ์"
+            en="Output"
+            badge={
+              result.ok ? (
+                <Badge variant="ok">{t('ถูกต้อง', 'Valid')}</Badge>
+              ) : result.empty ? (
+                <Badge variant="neutral">{t('ว่าง', 'Empty')}</Badge>
+              ) : (
+                <Badge variant="danger">{t('ผิดพลาด', 'Invalid')}</Badge>
+              )
+            }
+          >
+            <button className="btn small" onClick={handleCopy}>
+              {t('คัดลอก', 'Copy')}
+            </button>
+            <button className="btn small" onClick={handleDownload}>
+              {t('ดาวน์โหลด', 'Download')}
+            </button>
+          </PaneHead>
 
           <div className="output">
-            {result.empty && <p className="placeholder">ยังไม่มีข้อมูล — วาง JSON ที่ช่องด้านซ้าย</p>}
+            {result.empty && (
+              <p className="placeholder">{t('ยังไม่มีข้อมูล — วาง JSON ที่ช่องด้านซ้าย', 'Nothing yet — paste JSON on the left')}</p>
+            )}
             {result.error && (
-              <div className="error">
-                <strong>JSON ไม่ถูกต้อง</strong>
-                <p>{result.error.message}</p>
-                {result.error.line && (
-                  <p className="muted">
-                    บรรทัด {result.error.line} คอลัมน์ {result.error.column}
-                  </p>
+              <p className="placeholder">
+                {t(
+                  'แก้ข้อผิดพลาดในต้นฉบับก่อน — ผลลัพธ์จะแสดงที่นี่',
+                  'Fix the source first — the result will appear here'
                 )}
-              </div>
+              </p>
             )}
             {result.ok && (
               <div className="result">
                 {result.merged > 1 && (
-                  <p className="notice">พบ JSON {result.merged} ก้อนต่อกัน — รวมเป็นอาร์เรย์เดียวให้แล้ว</p>
+                  <p className="notice">
+                    {t(
+                      `พบ JSON ${result.merged} ก้อนต่อกัน — รวมเป็นอาร์เรย์เดียวให้แล้ว`,
+                      `Found ${result.merged} JSON chunks — merged into one array`
+                    )}
+                  </p>
                 )}
                 {view === 'code' ? <CodeView code={output} /> : <JsonTree data={value} />}
               </div>
             )}
           </div>
         </section>
-      </main>
+      </div>
 
-      <footer className="statusbar">
+      <OptionsSlot>
+        <OptionsPanel th="ตั้งค่า" en="Options">
+          <OptionGroup th="ระยะเยื้อง" en="Indent">
+            <Segmented
+              options={INDENT_OPTIONS.map((o) => ({ ...o, label: t(o.th, o.en) }))}
+              value={indent}
+              onChange={setIndent}
+              ariaLabel={t('ระยะเยื้อง', 'Indent')}
+            />
+          </OptionGroup>
+          <OptionGroup>
+            <Toggle checked={sortKeys} onChange={setSortKeys} th="เรียงคีย์ A→Z" en="Sort keys" />
+            <Toggle
+              checked={mergeChunks}
+              onChange={setMergeChunks}
+              th="รวมหลายก้อนเป็นอาร์เรย์"
+              en="Merge chunks"
+            />
+          </OptionGroup>
+          <OptionGroup th="มุมมอง" en="View">
+            <Segmented
+              options={VIEW_OPTIONS.map((o) => ({ ...o, label: t(o.th, o.en) }))}
+              value={view}
+              onChange={setView}
+              ariaLabel={t('มุมมอง', 'View')}
+            />
+          </OptionGroup>
+          <OptionGroup th="สถิติ" en="Stats">
+            <StatGrid
+              items={[
+                { th: 'คีย์', en: 'Keys', value: stats ? stats.keys : '—' },
+                { th: 'ความลึก', en: 'Depth', value: stats ? stats.depth : '—' },
+                { th: 'ไบต์', en: 'Bytes', value: stats ? stats.bytes : '—' },
+                { th: 'บรรทัด', en: 'Lines', value: stats ? stats.lines : '—' },
+              ]}
+            />
+          </OptionGroup>
+        </OptionsPanel>
+      </OptionsSlot>
+
+      <StatusSlot>
         {result.ok ? (
-          <>
-            <span className="badge ok">ถูกต้อง</span>
-            {result.merged > 1 && <span className="badge merged">รวม {result.merged} ก้อน → อาร์เรย์</span>}
-            <span>{stats.lines} บรรทัด</span>
-            <span>{formatBytes(stats.bytes)}</span>
-            <span>{stats.keys} คีย์</span>
-            <span>{stats.objects} อ็อบเจ็กต์</span>
-            <span>{stats.arrays} อาร์เรย์</span>
-            <span>ความลึก {stats.depth}</span>
-          </>
+          <span className="status-ok">● VALID</span>
+        ) : result.empty ? (
+          <span>○ EMPTY</span>
         ) : (
-          <span className={`badge ${result.empty ? '' : 'bad'}`}>
-            {result.empty ? 'ว่าง' : 'ผิดพลาด'}
-          </span>
+          <span className="status-danger">● INVALID</span>
         )}
-      </footer>
+        {result.merged > 1 && <span>MERGED ×{result.merged}</span>}
+        <span>UTF-8</span>
+        <span>{lineEnding}</span>
+        <span>JSON</span>
+      </StatusSlot>
     </>
   )
 }

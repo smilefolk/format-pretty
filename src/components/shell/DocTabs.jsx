@@ -13,7 +13,7 @@ export function docStatus(doc) {
     return 'ok'
   }
   if (doc.tool === 'unwrap') return of(unwrapJson(doc.input))
-  return of(parseJson(doc.input))
+  return of(parseJson(doc.input, { merge: doc.mergeChunks }))
 }
 
 // คำนวณสถานะเฉพาะ doc ที่เนื้อหาเปลี่ยน (ปกติคืออันที่กำลังพิมพ์) — อันอื่นใช้ผลที่ cache ไว้
@@ -25,10 +25,20 @@ function useDocStatuses(docs) {
     seen.add(doc.id)
     const hit = cache.current.get(doc.id)
     const changed =
-      !hit || hit.input !== doc.input || hit.left !== doc.left || hit.right !== doc.right
+      !hit ||
+      hit.input !== doc.input ||
+      hit.left !== doc.left ||
+      hit.right !== doc.right ||
+      hit.mergeChunks !== doc.mergeChunks
     const status = changed ? docStatus(doc) : hit.status
     if (changed) {
-      cache.current.set(doc.id, { input: doc.input, left: doc.left, right: doc.right, status })
+      cache.current.set(doc.id, {
+        input: doc.input,
+        left: doc.left,
+        right: doc.right,
+        mergeChunks: doc.mergeChunks,
+        status,
+      })
     }
     statuses[doc.id] = status
   }
