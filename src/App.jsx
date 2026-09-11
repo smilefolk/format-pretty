@@ -89,6 +89,8 @@ export default function App() {
             setIndent={field('indent')}
             sortKeys={doc.sortKeys}
             setSortKeys={field('sortKeys')}
+            mergeChunks={doc.mergeChunks}
+            setMergeChunks={field('mergeChunks')}
             view={doc.view}
             setView={field('view')}
             notify={notify}

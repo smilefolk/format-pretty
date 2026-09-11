@@ -17,10 +17,22 @@ const INDENTS = [
   { value: 'tab', label: 'แท็บ' },
 ]
 
-export default function Formatter({ input, setInput, indent, setIndent, sortKeys, setSortKeys, view, setView, notify }) {
+export default function Formatter({
+  input,
+  setInput,
+  indent,
+  setIndent,
+  sortKeys,
+  setSortKeys,
+  mergeChunks,
+  setMergeChunks,
+  view,
+  setView,
+  notify,
+}) {
   const fileRef = useRef(null)
 
-  const result = useMemo(() => parseJson(input), [input])
+  const result = useMemo(() => parseJson(input, { merge: mergeChunks }), [input, mergeChunks])
 
   const value = useMemo(
     () => (result.ok && sortKeys ? sortKeysDeep(result.value) : result.value),
@@ -103,6 +115,15 @@ export default function Formatter({ input, setInput, indent, setIndent, sortKeys
         <label className="check">
           <input type="checkbox" checked={sortKeys} onChange={(e) => setSortKeys(e.target.checked)} />
           เรียงคีย์ A→Z
+        </label>
+
+        <label className="check">
+          <input
+            type="checkbox"
+            checked={mergeChunks}
+            onChange={(e) => setMergeChunks(e.target.checked)}
+          />
+          รวมหลายก้อนเป็นอาร์เรย์
         </label>
 
         <div className="spacer" />
