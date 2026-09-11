@@ -132,6 +132,28 @@
   box-sizing: border-box;
 }
 
+/* ทุกจุดที่โต้ตอบได้ต้องมี focus ring มองเห็นได้ (คีย์บอร์ดเท่านั้น ไม่โผล่ตอนคลิกเมาส์) */
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+button,
+select,
+input,
+textarea {
+  transition: border-color 0.15s, background 0.15s;
+}
+
+/* ปุ่มยุบลง 1px ตอนกด */
+.btn:active,
+.icon-btn:active,
+.toggle:active,
+.segmented > button:active,
+.lang-switch button:active {
+  transform: translateY(1px);
+}
+
 html,
 body,
 #root {
@@ -271,45 +293,74 @@ body {
   flex: 1;
 }
 
-.btn {
-  padding: 7px 13px;
-  border: 1px solid var(--border);
+.btn,
+.btn.secondary {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 6px 12px;
+  border: 1px solid var(--border-strong);
   border-radius: 8px;
-  background: var(--panel-2);
-  color: var(--text);
-  font: inherit;
+  background: transparent;
+  color: var(--text-2);
+  font: 400 12.5px/1.3 var(--font-ui);
   cursor: pointer;
-  transition: border-color 0.15s, transform 0.05s;
 }
 
 .btn:hover {
   border-color: var(--accent);
 }
 
-.btn:active {
-  transform: translateY(1px);
+.btn:disabled {
+  color: var(--disabled);
+  border-color: var(--border);
+  cursor: default;
 }
 
 .btn.primary {
-  background: var(--accent);
+  padding: 6px 13px;
   border-color: var(--accent);
+  background: var(--accent);
   color: var(--accent-ink);
   font-weight: 600;
 }
 
-.btn.ghost {
-  background: transparent;
+.btn.primary:disabled {
+  opacity: 0.45;
+  border-color: var(--accent);
 }
 
+.btn.ghost {
+  padding: 6px 11px;
+  border-color: transparent;
+  color: var(--muted-2);
+  font-size: 12px;
+}
+
+.btn.ghost:hover {
+  color: var(--text);
+}
+
+/* ปุ่มไอคอนใน header เดิม — TopBar (#9) จะแทนด้วย IconButton แล้วลบใน #36 */
 .btn.icon {
   width: 38px;
   height: 38px;
+  justify-content: center;
+  padding: 0;
   font-size: 16px;
 }
 
 .btn.small {
-  padding: 4px 10px;
-  font-size: 12.5px;
+  padding: 3px 9px;
+  border-color: transparent;
+  border-radius: 6px;
+  background: var(--panel-2);
+  color: var(--text-2);
+  font-size: 11.5px;
+}
+
+.btn.small:hover {
+  border-color: var(--border-strong);
 }
 
 kbd {
@@ -366,19 +417,19 @@ select {
 .pane-head {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 9px 12px;
+  gap: 9px;
+  padding: 9px 14px;
   border-bottom: 1px solid var(--border);
-  background: var(--panel-2);
 }
 
 .pane-head h2 {
   margin: 0;
-  font-size: 13px;
-  font-weight: 600;
-  letter-spacing: 0.02em;
-  text-transform: uppercase;
-  color: var(--muted);
+  font: 600 12.5px/1.2 var(--font-ui);
+  color: var(--text);
+}
+
+.pane-head .l {
+  gap: 9px;
 }
 
 .pane-actions {
@@ -580,30 +631,189 @@ textarea.input {
 }
 
 .badge {
-  padding: 2px 9px;
-  border-radius: 20px;
+  display: inline-block;
+  padding: 1px 8px;
+  border-radius: 99px;
   background: var(--panel-2);
-  font-weight: 600;
+  color: var(--muted);
+  font: 600 10.5px/1.7 var(--font-ui);
+  white-space: nowrap;
 }
 
-.badge.ok {
-  background: color-mix(in srgb, var(--accent) 18%, transparent);
-  color: var(--accent);
-}
-
+.badge.ok,
 .badge.merged {
-  background: color-mix(in srgb, var(--accent) 20%, transparent);
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
   color: var(--accent);
 }
 
+.badge.danger,
 .badge.bad {
-  background: color-mix(in srgb, var(--danger) 18%, transparent);
+  background: color-mix(in srgb, var(--danger) 14%, transparent);
   color: var(--danger);
+}
+
+.badge.neutral {
+  background: var(--panel-2);
+  color: var(--muted);
 }
 
 .muted {
   color: var(--muted);
   font-size: 12.5px;
+}
+
+/* ---------- UI primitives (components/ui) ---------- */
+
+.segmented {
+  display: flex;
+  gap: 2px;
+  padding: 2px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--panel);
+}
+
+.segmented.vertical {
+  flex-direction: column;
+}
+
+.segmented > button {
+  flex: 1;
+  padding: 5px 0;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--muted-2);
+  font: 500 11.5px/1.4 var(--font-ui);
+  cursor: pointer;
+}
+
+.segmented.vertical > button {
+  padding: 6px 10px;
+  text-align: left;
+}
+
+.segmented > button.mono {
+  font-family: var(--font-mono);
+}
+
+.segmented > button:hover {
+  color: var(--text-2);
+}
+
+.segmented > button[aria-checked='true'] {
+  background: var(--border);
+  color: var(--text);
+  font-weight: 600;
+}
+
+.toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.toggle-track {
+  display: flex;
+  flex: none;
+  width: 32px;
+  height: 18px;
+  padding: 2px;
+  border-radius: 99px;
+  background: var(--border);
+  transition: background 0.15s;
+}
+
+.toggle-knob {
+  width: 14px;
+  height: 14px;
+  border-radius: 99px;
+  background: var(--muted-2);
+  transition: transform 0.15s, background 0.15s;
+}
+
+.toggle[aria-pressed='true'] .toggle-track {
+  background: var(--accent);
+}
+
+.toggle[aria-pressed='true'] .toggle-knob {
+  background: var(--accent-ink);
+  transform: translateX(14px);
+}
+
+.toggle-label .l-th {
+  font-size: 12px;
+  color: var(--text);
+}
+
+.keycap {
+  display: inline-block;
+  padding: 1px 5px;
+  border-radius: 4px;
+  background: var(--border);
+  color: color-mix(in srgb, var(--text-2), var(--muted));
+  font: 500 10px/1.4 var(--font-mono);
+}
+
+/* บนปุ่มมินต์: หมึกเข้มโปร่ง 18% ทับสีปุ่ม, ตัวอักษรสีเดียวกับปุ่ม */
+.keycap.primary,
+.btn.primary .keycap {
+  background: color-mix(in srgb, var(--accent-ink) 18%, transparent);
+  color: inherit;
+}
+
+.stat-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 7px;
+}
+
+.stat {
+  padding: 8px 10px;
+  border: 1px solid var(--border-soft);
+  border-radius: 8px;
+  background: var(--panel);
+}
+
+.stat-value {
+  font: 600 15px/1 var(--font-mono);
+  color: var(--text);
+}
+
+.stat-value.accent {
+  color: var(--accent);
+}
+
+.stat-caption {
+  margin-top: 3px;
+  font-size: 10.5px;
+  color: var(--muted-2);
+}
+
+.icon-btn {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--muted);
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.icon-btn:hover {
+  background: var(--panel-2);
+  color: var(--text);
 }
 
 /* ---------- toast ---------- */
