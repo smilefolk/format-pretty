@@ -488,6 +488,11 @@ body {
   border-bottom: 0;
 }
 
+/* กลุ่มที่เป็น toggle ล้วน ระยะระหว่างแถว 11px ตาม mock */
+.option-group > .toggle + .toggle {
+  margin-top: 4px;
+}
+
 .option-group-label .l-th {
   font-size: 12px;
   color: var(--text-2);

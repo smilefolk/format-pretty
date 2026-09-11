@@ -2,15 +2,12 @@ import { useCallback, useMemo, useRef } from 'react'
 import CodeView from '../components/CodeView'
 import Editor from '../components/Editor'
 import JsonTree from '../components/JsonTree'
-import { Badge, KeyCap, PaneHead } from '../components/ui'
+import OptionsPanel, { OptionGroup } from '../components/shell/OptionsPanel'
+import { OptionsSlot } from '../components/shell/slots'
+import { Badge, KeyCap, PaneHead, Segmented, StatGrid, Toggle } from '../components/ui'
+import { INDENT_OPTIONS, VIEW_OPTIONS } from '../lib/constants'
 import { useT } from '../lib/i18n'
 import { formatBytes, getStats, parseJson, sortKeysDeep, stringify } from '../lib/json'
-
-const INDENTS = [
-  { value: '2', label: '2 ช่อง' },
-  { value: '4', label: '4 ช่อง' },
-  { value: 'tab', label: 'แท็บ' },
-]
 
 export default function Formatter({
   input,
@@ -190,6 +187,46 @@ export default function Formatter({
           </div>
         </section>
       </div>
+
+      <OptionsSlot>
+        <OptionsPanel th="ตั้งค่า" en="Options">
+          <OptionGroup th="ระยะเยื้อง" en="Indent">
+            <Segmented
+              options={INDENT_OPTIONS.map((o) => ({ ...o, label: t(o.th, o.en) }))}
+              value={indent}
+              onChange={setIndent}
+              ariaLabel={t('ระยะเยื้อง', 'Indent')}
+            />
+          </OptionGroup>
+          <OptionGroup>
+            <Toggle checked={sortKeys} onChange={setSortKeys} th="เรียงคีย์ A→Z" en="Sort keys" />
+            <Toggle
+              checked={mergeChunks}
+              onChange={setMergeChunks}
+              th="รวมหลายก้อนเป็นอาร์เรย์"
+              en="Merge chunks"
+            />
+          </OptionGroup>
+          <OptionGroup th="มุมมอง" en="View">
+            <Segmented
+              options={VIEW_OPTIONS.map((o) => ({ ...o, label: t(o.th, o.en) }))}
+              value={view}
+              onChange={setView}
+              ariaLabel={t('มุมมอง', 'View')}
+            />
+          </OptionGroup>
+          <OptionGroup th="สถิติ" en="Stats">
+            <StatGrid
+              items={[
+                { th: 'คีย์', en: 'Keys', value: stats ? stats.keys : '—' },
+                { th: 'ความลึก', en: 'Depth', value: stats ? stats.depth : '—' },
+                { th: 'ไบต์', en: 'Bytes', value: stats ? stats.bytes : '—' },
+                { th: 'บรรทัด', en: 'Lines', value: stats ? stats.lines : '—' },
+              ]}
+            />
+          </OptionGroup>
+        </OptionsPanel>
+      </OptionsSlot>
 
       <footer className="statusbar">
         {result.ok ? (
