@@ -2,13 +2,8 @@ import { useEffect, useState } from 'react'
 import Compare from './pages/Compare'
 import Formatter from './pages/Formatter'
 import Unwrap from './pages/Unwrap'
-import { L, LangContext, LangSwitch, readLang, writeLang } from './lib/i18n'
-
-const MENU = [
-  { value: 'format', th: 'จัดรูปแบบ JSON', en: 'Format JSON' },
-  { value: 'compare', th: 'เปรียบเทียบ 2 ก้อน', en: 'Compare' },
-  { value: 'unwrap', th: 'สตริง → JSON', en: 'String → JSON' },
-]
+import AppShell from './components/shell/AppShell'
+import { LangContext, readLang, writeLang } from './lib/i18n'
 
 export default function App() {
   const [page, setPage] = useState('format')
@@ -49,44 +44,20 @@ export default function App() {
     notify('ส่งผลลัพธ์ไปหน้าจัดรูปแบบแล้ว')
   }
 
+  // ⌘K ยังเป็น stub จนกว่า CommandPalette (#35) จะเสร็จ
+  const openPalette = () =>
+    notify(lang === 'en' ? 'Command palette is coming soon' : 'ค้นหาคำสั่ง (⌘K) กำลังจะมา')
+
   return (
     <LangContext.Provider value={lang}>
-      <div className="app">
-        <header className="header">
-          <div className="brand">
-            <span className="brand-mark">{'{ }'}</span>
-            <div>
-              <h1>
-                Format<span>Pritty</span>
-              </h1>
-              <p>จัดรูปแบบ ตรวจสอบ และเปรียบเทียบ JSON ในเบราว์เซอร์ — ข้อมูลไม่ถูกส่งออกไปไหน</p>
-            </div>
-          </div>
-
-          <nav className="menu">
-            {MENU.map((m) => (
-              <button
-                key={m.value}
-                className={page === m.value ? 'active' : ''}
-                onClick={() => setPage(m.value)}
-              >
-                <L th={m.th} en={m.en} />
-              </button>
-            ))}
-          </nav>
-
-          <div className="header-tools">
-            <LangSwitch onChange={setLang} />
-            <button
-              className="btn ghost icon"
-              onClick={() => setTheme((t) => (t === 'dark' ? 'light' : 'dark'))}
-              title={lang === 'en' ? 'Toggle theme' : 'สลับธีม'}
-            >
-              {theme === 'dark' ? '☀︎' : '☾'}
-            </button>
-          </div>
-        </header>
-
+      <AppShell
+        tool={page}
+        onSelectTool={setPage}
+        theme={theme}
+        onThemeToggle={() => setTheme((t) => (t === 'dark' ? 'light' : 'dark'))}
+        onLangChange={setLang}
+        onCommandPalette={openPalette}
+      >
         {page === 'format' && (
           <Formatter
             input={input}
@@ -119,7 +90,7 @@ export default function App() {
         )}
 
         {toast && <div className="toast">{toast}</div>}
-      </div>
+      </AppShell>
     </LangContext.Provider>
   )
 }

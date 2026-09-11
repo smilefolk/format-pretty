@@ -167,56 +167,280 @@ body {
   font: 14px/1.5 var(--font-ui);
 }
 
-.app {
+/* ---------- shell (components/shell) ---------- */
+
+/* โครงเต็ม viewport ไม่มี max-width — ความลึกมาจากขั้นของ surface + เส้น 1px ไม่มีเงา */
+.shell {
   display: flex;
   flex-direction: column;
   height: 100%;
-  max-width: 1500px;
-  margin: 0 auto;
-  padding: 18px 20px 12px;
-  gap: 14px;
+  background: var(--bg);
 }
 
-/* ---------- header ---------- */
+.shell-main {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+}
 
-.header {
+/* พื้นที่ของหน้า: padding/gap ชั่วคราวให้หน้าเดิม (การ์ดมีขอบมน) ไม่ชนขอบ
+   จะเอาออกเมื่อหน้าถูกเขียนใหม่ให้ชิดขอบในเฟส 3–5 */
+.shell-content {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 12px 14px;
+}
+
+/* --- top bar --- */
+
+.top-bar {
+  display: flex;
+  align-items: stretch;
+  flex: none;
+  border-bottom: 1px solid var(--border);
+  background: var(--chrome);
+}
+
+.top-bar-brand {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 16px;
+  gap: 10px;
+  padding: 0 14px;
+  border-right: 1px solid var(--border);
 }
 
-.brand {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-}
-
-.brand-mark {
+.top-bar-logo {
   display: grid;
   place-items: center;
-  width: 44px;
-  height: 44px;
-  border-radius: 12px;
+  width: 26px;
+  height: 26px;
+  border-radius: 7px;
   background: var(--accent);
   color: var(--accent-ink);
-  font: 700 17px/1 var(--font-mono);
+  font: 700 11px/1 var(--font-mono);
 }
 
-.brand h1 {
-  margin: 0;
-  font-size: 21px;
-  letter-spacing: -0.3px;
+.top-bar-wordmark {
+  font: 600 13px/1 var(--font-ui);
+  letter-spacing: -0.2px;
+  color: var(--text);
 }
 
-.brand h1 span {
+/* ช่องสำหรับ DocTabs (#14) — แท็บชิดขอบล่างเพื่อเชื่อมกับ pane ข้างใต้ */
+.top-bar-tabs {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: flex-end;
+  gap: 1px;
+  padding: 0 6px;
+  min-height: 44px;
+}
+
+.top-bar-tools {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 12px;
+  border-left: 1px solid var(--border);
+}
+
+.cmd-hint {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 5px 10px;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  background: var(--panel-2);
+  color: var(--muted);
+  font: 400 11.5px/1.4 var(--font-ui);
+  cursor: pointer;
+}
+
+.cmd-hint:hover {
+  border-color: var(--border-strong);
+  color: var(--text-2);
+}
+
+/* --- tool rail --- */
+
+.tool-rail {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  flex: none;
+  width: 56px;
+  padding: 10px 0;
+  border-right: 1px solid var(--border);
+  background: var(--chrome);
+}
+
+.tool-rail-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  width: 44px;
+  padding: 7px 0;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  color: var(--muted-2);
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.tool-rail-item:hover {
+  color: var(--text-2);
+}
+
+.tool-rail-item[aria-current='page'] {
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
   color: var(--accent);
 }
 
-.brand p {
-  margin: 2px 0 0;
-  color: var(--muted);
-  font-size: 12.5px;
+.tool-rail-glyph {
+  font: 600 13px/1 var(--font-mono);
+  white-space: pre;
+}
+
+.tool-rail-caption {
+  font: 500 8px/1 var(--font-mono);
+  letter-spacing: 0.06em;
+}
+
+.tool-rail-spacer {
+  flex: 1;
+}
+
+.tool-rail-help {
+  justify-content: center;
+  width: 40px;
+  height: 36px;
+  padding: 0;
+  font-size: 14px;
+}
+
+/* --- options panel (คอลัมน์ขวา / drawer) --- */
+
+/* container ที่ shell ถือ — กว้างตามเนื้อหาที่หน้า portal เข้ามา (ไม่มี = 0) */
+.shell-options {
+  flex: none;
+  display: flex;
+  min-height: 0;
+  outline: none;
+}
+
+.options-panel {
+  display: flex;
+  flex-direction: column;
+  width: 236px;
+  min-height: 0;
+  border-left: 1px solid var(--border);
+  background: var(--chrome);
+  overflow: auto;
+}
+
+.options-panel-head {
+  flex: none;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border);
+}
+
+.options-panel-head .l {
+  gap: 8px;
+}
+
+.options-panel-head .l-th {
+  font: 600 12px/1.2 var(--font-ui);
+  color: var(--text);
+}
+
+.option-group {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  padding: 13px 14px;
+  border-bottom: 1px solid var(--border-soft);
+}
+
+.option-group:last-child {
+  border-bottom: 0;
+}
+
+.option-group-label .l-th {
+  font-size: 12px;
+  color: var(--text-2);
+}
+
+/* --- status strip --- */
+
+.status-strip {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex: none;
+  padding: 7px 14px;
+  border-top: 1px solid var(--border);
+  background: var(--chrome);
+  color: var(--muted-3);
+  font: 400 11px/1.4 var(--font-mono);
+}
+
+.status-strip-items {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex: 1;
+  min-width: 0;
+}
+
+.status-strip-note {
+  margin-left: auto;
+  white-space: nowrap;
+}
+
+/* --- responsive: < 1180 options panel เป็น drawer, ปุ่มเปิดโชว์เฉพาะตอนนั้น --- */
+
+/* specificity 2 ชั้นเพื่อชนะ .icon-btn { display: grid } ที่ประกาศทีหลัง */
+.icon-btn.only-narrow {
+  display: none;
+}
+
+@media (max-width: 1179px) {
+  .icon-btn.only-narrow {
+    display: grid;
+  }
+
+  .shell-options {
+    position: fixed;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 20;
+    transform: translateX(100%);
+    visibility: hidden;
+    transition: transform 0.15s, visibility 0.15s;
+  }
+
+  .shell-options.open {
+    transform: none;
+    visibility: visible;
+    box-shadow: var(--shadow-overlay);
+  }
+
+  .shell-scrim {
+    position: fixed;
+    inset: 0;
+    z-index: 19;
+    background: color-mix(in srgb, var(--bg) 60%, transparent);
+  }
 }
 
 /* ---------- label สองภาษา (lib/i18n.jsx) ---------- */
@@ -268,12 +492,6 @@ body {
   background: var(--border);
   color: var(--text);
   font-weight: 600;
-}
-
-.header-tools {
-  display: flex;
-  align-items: center;
-  gap: 8px;
 }
 
 /* ---------- controls ---------- */
@@ -339,15 +557,6 @@ body {
 
 .btn.ghost:hover {
   color: var(--text);
-}
-
-/* ปุ่มไอคอนใน header เดิม — TopBar (#9) จะแทนด้วย IconButton แล้วลบใน #36 */
-.btn.icon {
-  width: 38px;
-  height: 38px;
-  justify-content: center;
-  padding: 0;
-  font-size: 16px;
 }
 
 .btn.small {
@@ -838,7 +1047,7 @@ textarea.input {
   }
 }
 
-@media (max-width: 860px) {
+@media (max-width: 899px) {
   .panes {
     grid-template-columns: 1fr;
   }
@@ -861,37 +1070,6 @@ textarea.input {
   font: 12.5px/1.6 var(--font-mono);
   white-space: pre-wrap;
   word-break: break-all;
-}
-
-/* ---------- เมนูหลัก ---------- */
-
-.menu {
-  display: flex;
-  gap: 4px;
-  padding: 4px;
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  background: var(--panel);
-}
-
-.menu button {
-  padding: 7px 14px;
-  border: 0;
-  border-radius: 7px;
-  background: transparent;
-  color: var(--muted);
-  font: inherit;
-  cursor: pointer;
-}
-
-.menu button:hover {
-  color: var(--text);
-}
-
-.menu button.active {
-  background: var(--accent);
-  color: var(--accent-ink);
-  font-weight: 600;
 }
 
 /* ---------- หน้าเปรียบเทียบ ---------- */
@@ -1024,20 +1202,7 @@ textarea.input {
   color: var(--accent);
 }
 
-@media (max-width: 860px) {
-  .header {
-    flex-wrap: wrap;
-  }
-
-  .menu {
-    order: 3;
-    width: 100%;
-  }
-
-  .menu button {
-    flex: 1;
-  }
-
+@media (max-width: 899px) {
   .compare .panes.inputs {
     flex: none;
   }
