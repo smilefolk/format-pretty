@@ -71,7 +71,11 @@ NDJSON / อ็อบเจ็กต์ที่ต่อกันให้เ�
 ### ไลบรารีที่ต่อยอดจาก `parseJson`
 
 - `src/lib/diff.js` — เทียบ JSON สองก้อนแบบ recursive คืนรายการ `{ path, type, left, right }`
-  โดย `type` เป็น `added` / `removed` / `changed` / `type` — **อาร์เรย์จับคู่ตาม index ไม่ใช่ตามคีย์**
+  โดย `type` เป็น `added` / `removed` / `changed` / `type` (+ `equal` เฉพาะใบเมื่อ `includeEqual`)
+  `diffJson(a, b, { arrayKey, includeEqual })` — อาร์เรย์เทียบตาม index เป็นค่าเริ่มต้น; ส่ง `arrayKey`
+  เพื่อจับคู่ด้วยค่าคีย์ (path `$.items[id=7]` / `$.items[sku="X1"]`) อาร์เรย์ที่จับคู่ไม่ได้ fallback เป็น index
+  เฉพาะอาร์เรย์นั้น — `diffJsonWithMeta()` คืน `{ diffs, fallbacks }` ให้ UI แสดง notice;
+  `countKeys()` นับใบที่ตรงกัน/รวม สำหรับการ์ดสรุป; `summarize()` / `toReport()` ไม่นับ `equal`
 - `src/lib/unwrap.js` — แกะ JSON ที่ถูก escape เป็นสตริง ทีละชั้นสูงสุด 12 ชั้น รองรับทั้งแบบมีและ
   ไม่มีเครื่องหมายคำพูดครอบ ส่วน `unwrapNested()` แกะสตริง JSON ที่ซ่อนอยู่ในฟิลด์ย่อย
 
@@ -106,8 +110,8 @@ label สองภาษาใช้ `<L th en />` จาก `src/lib/i18n.jsx` 
 `CodeView` (ระบายสีด้วย `tokenize()` จาก `json.js`), `JsonTree` (มุมมองพับ/ขยาย), `ErrorCard` (การ์ด error
 ใต้ source pane: chip line:column + ปุ่มไปที่บรรทัด) — ตัวเลือก indent/view ที่ใช้ร่วมกันอยู่ใน `lib/constants.js`
 
-หน้าที่ redesign แล้ว (Formatter) เรนเดอร์ชิดขอบใน `.workbench`; หน้าที่ยังเป็นการ์ดแบบเดิม (Compare / Unwrap)
-ห่อด้วย `<div className="legacy-page">` ซึ่งถือ padding ไว้แทน `.shell-content` — ลบทิ้งเมื่อทุกหน้า redesign ครบ
+หน้าที่ redesign แล้วเรนเดอร์ชิดขอบ (Formatter ใน `.workbench`, Compare ใน `.compare-page`); หน้าที่ยังเป็นการ์ด
+แบบเดิม (Unwrap) ห่อด้วย `<div className="legacy-page">` ซึ่งถือ padding ไว้แทน `.shell-content` — ลบทิ้งเมื่อทุกหน้า redesign ครบ
 
 ## Conventions
 
