@@ -1317,6 +1317,53 @@ textarea.input::placeholder {
   }
 }
 
+/* ---------- หน้าแปลงสตริง (mock 3b) ---------- */
+
+/* การ์ด chain ชั้นที่แกะได้ — ใต้ editor เหนือ action bar */
+.peel-card {
+  flex: none;
+  margin: 0 14px 12px;
+  padding: 11px 13px;
+  border: 1px solid var(--border-soft);
+  border-radius: 9px;
+  background: var(--panel);
+}
+
+.peel-label {
+  font: 500 9.5px/1 var(--font-mono);
+  letter-spacing: 0.08em;
+  color: var(--muted-3);
+}
+
+.peel-chain {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.peel-chip {
+  padding: 3px 9px;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  background: var(--panel-2);
+  color: var(--text-2);
+  font: 500 10.5px/1.5 var(--font-mono);
+}
+
+/* ชั้นในสุด = ผลลัพธ์ที่ได้ */
+.peel-chip.last {
+  border-color: color-mix(in srgb, var(--accent) 32%, transparent);
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  color: var(--accent);
+}
+
+.peel-arrow {
+  color: var(--disabled);
+  font-size: 11px;
+}
+
 /* ---------- ข้อความที่แกะได้ (หน้าแปลงสตริง) ---------- */
 
 .peeled {

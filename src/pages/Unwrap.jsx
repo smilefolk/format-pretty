@@ -1,25 +1,51 @@
-import { useMemo, useState } from 'react'
+import { Fragment, useMemo, useRef, useState } from 'react'
 import CodeView from '../components/CodeView'
 import Editor from '../components/Editor'
 import JsonTree from '../components/JsonTree'
-import { L } from '../lib/i18n'
-import { INDENT_OPTIONS } from '../lib/constants'
+import { KeyCap, PaneHead } from '../components/ui'
+import { L, useLang, useT } from '../lib/i18n'
 import { formatBytes, getStats, stringify } from '../lib/json'
 import { unwrapJson, unwrapNested } from '../lib/unwrap'
 
-const SAMPLE = `"{\\"order_id\\":\\"A-1024\\",\\"items\\":[{\\"sku\\":\\"X1\\",\\"qty\\":2},{\\"sku\\":\\"Y7\\",\\"qty\\":1}],\\"paid\\":true,\\"note\\":null}"`
+// ปุ่ม "ตัวอย่าง" สลับสองชุดนี้ (และ palette #34 ใช้ต่อ)
+export const SAMPLE = `"{\\"order_id\\":\\"A-1024\\",\\"items\\":[{\\"sku\\":\\"X1\\",\\"qty\\":2},{\\"sku\\":\\"Y7\\",\\"qty\\":1}],\\"paid\\":true,\\"note\\":null}"`
 
-const SAMPLE_NESTED = `{"event":"order.created","ts":"2026-09-02T10:20:30Z","payload":"{\\"order_id\\":\\"A-1024\\",\\"customer\\":\\"{\\\\\\"id\\\\\\":7,\\\\\\"tier\\\\\\":\\\\\\"gold\\\\\\"}\\"}"}`
+// ตัวอย่างซ้อน: สตริงชั้นนอก → ฟิลด์ payload → ฟิลด์ customer (chain 3 ชั้นตรง mock 3b)
+export const SAMPLE_NESTED = `"{\\"event\\":\\"order.created\\",\\"ts\\":\\"2026-09-02T10:20:30Z\\",\\"payload\\":\\"{\\\\\\"order_id\\\\\\":\\\\\\"A-1024\\\\\\",\\\\\\"customer\\\\\\":\\\\\\"{\\\\\\\\\\\\\\"id\\\\\\\\\\\\\\":7,\\\\\\\\\\\\\\"tier\\\\\\\\\\\\\\":\\\\\\\\\\\\\\"gold\\\\\\\\\\\\\\"}\\\\\\"}\\"}"`
+
+// ชื่อฟิลด์ท้ายสุดของ path สำหรับ chip ใน chain (path เต็มอยู่ใน title) — จุดในเครื่องหมายคำพูดไม่นับ
+function lastSegment(path) {
+  let depth = 0
+  for (let i = path.length - 1; i >= 0; i--) {
+    const ch = path[i]
+    if (ch === ']') depth++
+    else if (ch === '[') depth--
+    else if (ch === '.' && depth === 0) return path.slice(i + 1)
+  }
+  return path
+}
 
 export default function Unwrap({ input, setInput, indent, setIndent, view, setView, notify, sendToFormatter }) {
+  const t = useT()
+  const lang = useLang()
+  const editorRef = useRef(null)
   const [deep, setDeep] = useState(true)
 
   const result = useMemo(() => unwrapJson(input), [input])
 
   const nested = useMemo(
-    () => (result.ok && deep ? unwrapNested(result.value) : { value: result.value, count: 0 }),
+    () =>
+      result.ok && deep
+        ? unwrapNested(result.value)
+        : { value: result.value, count: 0, fields: [], passes: 1 },
     [result, deep]
   )
+
+  // chain ชั้นที่แกะ: ชั้นนอก (string) ต่อด้วยฟิลด์ที่แกะได้ เรียงเลขต่อกัน
+  const chain = [
+    ...result.peels.map((p) => ({ n: p.n, where: p.where, title: t('ชั้นนอกของสตริง', 'Outer string layer') })),
+    ...nested.fields.map((f, i) => ({ n: result.layers + i + 1, where: lastSegment(f.path), title: f.path })),
+  ]
 
   const output = useMemo(
     () => (result.ok ? stringify(nested.value, indent) : ''),
@@ -48,6 +74,21 @@ export default function Unwrap({ input, setInput, indent, setIndent, view, setVi
     URL.revokeObjectURL(url)
   }
 
+  // D5(a): แกะแล้วเขียนผลทับช่องซ้าย (เหมือน "จัดรูปแบบ" ของ Formatter)
+  const handleUnwrap = () => {
+    if (!result.ok) return notify(result.empty ? 'ยังไม่มีข้อมูลให้แกะ' : 'แกะเป็น JSON ไม่ได้')
+    if (chain.length === 0) return notify('ข้อมูลนี้เป็น JSON อยู่แล้ว ไม่ต้องแกะ')
+    setInput(output)
+    notify(`แกะสตริง ${chain.length} ชั้นเรียบร้อย`)
+  }
+
+  const onKeyDown = (e) => {
+    if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
+      e.preventDefault()
+      handleUnwrap()
+    }
+  }
+
   const readFile = (file) => {
     if (!file) return
     const reader = new FileReader()
@@ -59,63 +100,68 @@ export default function Unwrap({ input, setInput, indent, setIndent, view, setVi
   }
 
   return (
-    <div className="legacy-page">
-      <div className="toolbar">
-        <label className="check">
-          <input type="checkbox" checked={deep} onChange={(e) => setDeep(e.target.checked)} />
-          แกะสตริง JSON ที่ซ้อนอยู่ในฟิลด์ด้วย
-        </label>
-
-        <label className="field">
-          ระยะเยื้อง
-          <select value={indent} onChange={(e) => setIndent(e.target.value)}>
-            {INDENT_OPTIONS.map((i) => (
-              <option key={i.value} value={i.value}>
-                {i.mono ? `${i.th} ช่อง` : i.th}
-              </option>
-            ))}
-          </select>
-        </label>
-
-        <div className="spacer" />
-
-        <button
-          className="btn"
-          onClick={() => (output ? sendToFormatter(output) : notify('ยังไม่มีผลลัพธ์'))}
-        >
-          ส่งไปหน้าจัดรูปแบบ
-        </button>
-        <button className="btn" onClick={() => setInput(SAMPLE)}>
-          ตัวอย่าง
-        </button>
-        <button className="btn" onClick={() => setInput(SAMPLE_NESTED)}>
-          ตัวอย่างซ้อนในฟิลด์
-        </button>
-        <button className="btn" onClick={() => setInput('')}>
-          ล้าง
-        </button>
-      </div>
-
-      <main className="panes">
-        <section className="pane">
-          <div className="pane-head">
-            <h2>
-              <L th="สตริง JSON" en="JSON string" />
-            </h2>
-            <span className="muted">
-              {input.split('\n').length} บรรทัด · {formatBytes(new Blob([input]).size)}
+    <>
+      <div className="workbench">
+        <section className="pane source">
+          <PaneHead th="สตริง JSON" en="Escaped string">
+            <span className="pane-meta">
+              {input.split('\n').length} {t('บรรทัด', 'lines')} · {formatBytes(new Blob([input]).size)}
             </span>
-          </div>
+          </PaneHead>
           <Editor
+            ref={editorRef}
+            wrap
             value={input}
             onChange={setInput}
             errorLine={result.error?.line}
             onDropFile={readFile}
+            onKeyDown={onKeyDown}
             placeholder={
               'วางสตริง JSON ที่นี่ เช่น "{\\"a\\":1}"\n' +
               'วางแบบไม่มีเครื่องหมายคำพูดครอบ เช่น {\\"a\\":1} ก็ได้ และรองรับการ escape ซ้อนหลายชั้น'
             }
           />
+          {chain.length > 0 && (
+            <div className="peel-card">
+              <div className="peel-label">
+                {lang === 'en' ? 'PEELED LAYERS' : 'ชั้นที่แกะได้ · PEELED LAYERS'}
+              </div>
+              <div className="peel-chain">
+                {chain.map((c, i) => (
+                  <Fragment key={c.n}>
+                    {i > 0 && (
+                      <span className="peel-arrow" aria-hidden="true">
+                        →
+                      </span>
+                    )}
+                    <span
+                      className={i === chain.length - 1 ? 'peel-chip last' : 'peel-chip'}
+                      title={c.title}
+                    >
+                      {c.n} · {c.where}
+                    </span>
+                  </Fragment>
+                ))}
+              </div>
+            </div>
+          )}
+          <div className="action-bar">
+            <button className="btn primary" onClick={handleUnwrap}>
+              {t('แกะสตริง', 'Unwrap')}
+              <KeyCap variant="primary">⌘↵</KeyCap>
+            </button>
+            <div className="spacer" />
+            <button
+              className="btn ghost"
+              onClick={() => setInput(input === SAMPLE ? SAMPLE_NESTED : SAMPLE)}
+              title={t('สลับตัวอย่างธรรมดา / ซ้อนในฟิลด์', 'Toggle simple / nested sample')}
+            >
+              {t('ตัวอย่าง', 'Sample')}
+            </button>
+            <button className="btn ghost" onClick={() => setInput('')}>
+              {t('ล้าง', 'Clear')}
+            </button>
+          </div>
         </section>
 
         <section className="pane">
@@ -181,7 +227,7 @@ export default function Unwrap({ input, setInput, indent, setIndent, view, setVi
             )}
           </div>
         </section>
-      </main>
+      </div>
 
       <footer className="statusbar">
         {result.ok ? (
@@ -198,6 +244,6 @@ export default function Unwrap({ input, setInput, indent, setIndent, view, setVi
           <span className={`badge ${result.empty ? '' : 'bad'}`}>{result.empty ? 'ว่าง' : 'แกะไม่สำเร็จ'}</span>
         )}
       </footer>
-    </div>
+    </>
   )
 }
