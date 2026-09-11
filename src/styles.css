@@ -1398,6 +1398,152 @@ textarea.input::placeholder {
   font-weight: 600;
 }
 
+/* หลาย notice ซ้อนกัน (auto-split + fallback) — sticky ทั้งกลุ่ม ไม่ใช่ทีละอัน */
+.notices {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+.notices .notice {
+  position: static;
+}
+
+/* --- panel ขวา: รายการตัวกรอง --- */
+
+.filter-list {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.filter-item {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 6px 10px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text-2);
+  font: 400 12px/1.3 var(--font-ui);
+  text-align: left;
+  cursor: pointer;
+}
+
+.filter-item:hover {
+  background: var(--panel);
+}
+
+.filter-item.selected {
+  border-color: color-mix(in srgb, var(--accent) 30%, transparent);
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.filter-swatch {
+  flex: none;
+  width: 7px;
+  height: 7px;
+  border-radius: 2px;
+}
+
+.filter-label {
+  flex: 1;
+}
+
+.filter-count {
+  font: 500 11.5px/1.3 var(--font-mono);
+  color: var(--muted);
+}
+
+.filter-item.selected .filter-count {
+  color: var(--accent);
+  font-weight: 600;
+}
+
+/* ชื่อคีย์สำหรับจับคู่อาร์เรย์ (แสดงเมื่อเลือกโหมดคีย์) */
+.key-field {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11.5px;
+  color: var(--muted);
+}
+
+.key-field input {
+  flex: 1;
+  min-width: 0;
+  padding: 4px 8px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--panel);
+  color: var(--text);
+  font: 500 11px/1.4 var(--font-mono);
+}
+
+.key-field input:focus {
+  border-color: var(--accent);
+  outline: none;
+}
+
+.segmented > button code {
+  font: 500 10.5px/1 var(--font-mono);
+}
+
+/* --- การ์ดสรุป --- */
+
+.summary-card {
+  padding: 10px 12px;
+  border: 1px solid var(--border-soft);
+  border-radius: 9px;
+  background: var(--panel);
+}
+
+.summary-head {
+  display: flex;
+  align-items: baseline;
+  gap: 7px;
+}
+
+.summary-total {
+  font: 600 20px/1 var(--font-mono);
+}
+
+.summary-total.danger {
+  color: var(--danger);
+}
+
+.summary-total.accent {
+  color: var(--accent);
+}
+
+.summary-label {
+  font-size: 11.5px;
+  color: var(--muted);
+}
+
+/* แถบสัดส่วน: segment กว้างตาม flex = จำนวนของชนิดนั้น รวมกันเต็มเสมอ */
+.summary-bar {
+  display: flex;
+  gap: 3px;
+  height: 6px;
+  margin-top: 10px;
+  border-radius: 99px;
+  overflow: hidden;
+}
+
+.summary-bar > span {
+  min-width: 2px;
+}
+
+.summary-keys {
+  margin-top: 8px;
+  font: 400 10.5px/1.6 var(--font-mono);
+  color: var(--muted-3);
+}
+
 /* สีประจำชนิดความต่าง — alias ของ token จึงตามธีมโดยไม่ต้องประกาศซ้ำในธีมสว่าง */
 :root {
   --diff-changed: var(--tok-number);

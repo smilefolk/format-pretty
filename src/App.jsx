@@ -104,6 +104,12 @@ export default function App() {
             setLeft={field('left')}
             right={doc.right}
             setRight={field('right')}
+            strategy={doc.strategy}
+            setStrategy={field('strategy')}
+            arrayKey={doc.arrayKey}
+            setArrayKey={field('arrayKey')}
+            showEqual={doc.showEqual}
+            setShowEqual={field('showEqual')}
             notify={notify}
           />
         )}

@@ -1,7 +1,9 @@
 import { useMemo, useState } from 'react'
 import Editor from '../components/Editor'
-import { Badge, PaneHead } from '../components/ui'
-import { diffJson, preview, summarize, toReport, typeLabel } from '../lib/diff'
+import OptionsPanel, { OptionGroup } from '../components/shell/OptionsPanel'
+import { OptionsSlot } from '../components/shell/slots'
+import { Badge, PaneHead, Segmented, Toggle } from '../components/ui'
+import { countKeys, diffJsonWithMeta, preview, summarize, toReport, typeLabel } from '../lib/diff'
 import { useT } from '../lib/i18n'
 import { parseJson } from '../lib/json'
 
@@ -26,15 +28,29 @@ export const SAMPLE_RIGHT = `{
   "newField": "เพิ่มเข้ามาในก้อนขวา"
 }`
 
+// ลำดับชนิดในตัวกรองและแถบสัดส่วน (ตรง mock 3a)
+const TYPES = ['changed', 'type', 'removed', 'added']
 const FILTERS = [
-  { value: 'all', label: 'ทั้งหมด' },
-  { value: 'changed', label: 'ค่าต่างกัน' },
-  { value: 'type', label: 'ชนิดต่างกัน' },
-  { value: 'removed', label: 'เฉพาะซ้าย' },
-  { value: 'added', label: 'เฉพาะขวา' },
+  { value: 'all', th: 'ทั้งหมด', en: 'All' },
+  { value: 'changed', th: 'ค่าต่างกัน', en: 'Changed' },
+  { value: 'type', th: 'ชนิดต่างกัน', en: 'Type' },
+  { value: 'removed', th: 'เฉพาะซ้าย', en: 'Left only' },
+  { value: 'added', th: 'เฉพาะขวา', en: 'Right only' },
 ]
 
-export default function Compare({ left, setLeft, right, setRight, notify }) {
+export default function Compare({
+  left,
+  setLeft,
+  right,
+  setRight,
+  strategy,
+  setStrategy,
+  arrayKey,
+  setArrayKey,
+  showEqual,
+  setShowEqual,
+  notify,
+}) {
   const t = useT()
   const [filter, setFilter] = useState('all')
   // คำค้นเส้นทาง — state เฉพาะ UI ของหน้า (ไม่อยู่ใน doc)
@@ -55,15 +71,28 @@ export default function Compare({ left, setLeft, right, setRight, notify }) {
         ready: leftResult.ok && rightResult.ok,
       }
 
-  const diffs = useMemo(
-    () => (pair.ready ? diffJson(pair.a, pair.b) : []),
-    [pair.ready, pair.a, pair.b]
+  // จับคู่ด้วยคีย์เฉพาะเมื่อเลือก strategy นั้นและมีชื่อคีย์; ชื่อว่าง = เทียบตามลำดับ
+  const keyName = strategy === 'key' ? arrayKey.trim() : ''
+  const { diffs, fallbacks } = useMemo(
+    () =>
+      pair.ready
+        ? diffJsonWithMeta(pair.a, pair.b, { arrayKey: keyName || null, includeEqual: showEqual })
+        : { diffs: [], fallbacks: [] },
+    [pair.ready, pair.a, pair.b, keyName, showEqual]
+  )
+  const keys = useMemo(
+    () => (pair.ready ? countKeys(pair.a, pair.b, { arrayKey: keyName || null }) : null),
+    [pair.ready, pair.a, pair.b, keyName]
   )
 
+  // นับเฉพาะความต่าง (ไม่รวมแถว equal ที่มาจาก showEqual)
   const counts = useMemo(() => summarize(diffs), [diffs])
+  const total = TYPES.reduce((n, type) => n + counts[type], 0)
   const needle = query.trim().toLowerCase()
   const shown = diffs.filter(
-    (d) => (filter === 'all' || d.type === filter) && (!needle || d.path.toLowerCase().includes(needle))
+    (d) =>
+      (filter === 'all' || d.type === filter) &&
+      (!needle || d.path.toLowerCase().includes(needle))
   )
 
   const handleSwap = () => {
@@ -142,11 +171,11 @@ export default function Compare({ left, setLeft, right, setRight, notify }) {
             badge={
               !pair.ready ? (
                 <Badge variant="neutral">{t('รอข้อมูล', 'Waiting')}</Badge>
-              ) : diffs.length === 0 ? (
+              ) : total === 0 ? (
                 <Badge variant="ok">{t('เหมือนกัน', 'Identical')}</Badge>
               ) : (
                 <Badge variant="danger">
-                  {diffs.length} {t('จุด', diffs.length === 1 ? 'diff' : 'diffs')}
+                  {total} {t('จุด', total === 1 ? 'diff' : 'diffs')}
                 </Badge>
               )
             }
@@ -175,13 +204,20 @@ export default function Compare({ left, setLeft, right, setRight, notify }) {
 
             {pair.ready && (
               <div className="result">
-                {autoSplit && (
-                  <p className="notice">
-                    พบ JSON 2 ก้อนในช่องซ้าย — แยกเป็นก้อนซ้าย/ขวาให้อัตโนมัติ
-                  </p>
+                {(autoSplit || fallbacks.length > 0) && (
+                  <div className="notices">
+                    {autoSplit && (
+                      <p className="notice">พบ JSON 2 ก้อนในช่องซ้าย — แยกเป็นก้อนซ้าย/ขวาให้อัตโนมัติ</p>
+                    )}
+                    {fallbacks.length > 0 && (
+                      <p className="notice">
+                        บางอาร์เรย์ไม่มีคีย์ "{keyName}" ครบ — เทียบตามลำดับแทน ({fallbacks.join(', ')})
+                      </p>
+                    )}
+                  </div>
                 )}
 
-                {diffs.length === 0 ? (
+                {total === 0 && !showEqual ? (
                   <p className="placeholder same">ข้อมูลสองก้อนเหมือนกันทุกประการ</p>
                 ) : shown.length === 0 ? (
                   <p className="placeholder">
@@ -236,11 +272,100 @@ export default function Compare({ left, setLeft, right, setRight, notify }) {
         </section>
       </div>
 
+      <OptionsSlot>
+        <OptionsPanel th="ตัวกรอง" en="Filter">
+          <OptionGroup>
+            <div className="filter-list" role="radiogroup" aria-label={t('ตัวกรองชนิด', 'Filter by type')}>
+              {FILTERS.map((f) => {
+                const selected = filter === f.value
+                return (
+                  <button
+                    key={f.value}
+                    type="button"
+                    role="radio"
+                    aria-checked={selected}
+                    className={selected ? 'filter-item selected' : 'filter-item'}
+                    onClick={() => setFilter(f.value)}
+                  >
+                    {f.value !== 'all' && (
+                      <span className="filter-swatch" style={{ background: `var(--diff-${f.value})` }} />
+                    )}
+                    <span className="filter-label">{t(f.th, f.en)}</span>
+                    <span className="filter-count">{f.value === 'all' ? total : counts[f.value]}</span>
+                  </button>
+                )
+              })}
+            </div>
+          </OptionGroup>
+          <OptionGroup th="วิธีเทียบ" en="Strategy">
+            <Segmented
+              vertical
+              options={[
+                { value: 'index', label: t('อาร์เรย์เทียบตามลำดับ', 'Arrays by index') },
+                {
+                  value: 'key',
+                  label: (
+                    <>
+                      {t('จับคู่ด้วยคีย์', 'Match by key')} <code>{arrayKey.trim() || 'id'}</code>
+                    </>
+                  ),
+                },
+              ]}
+              value={strategy}
+              onChange={setStrategy}
+              ariaLabel={t('วิธีเทียบ', 'Strategy')}
+            />
+            {strategy === 'key' && (
+              <label className="key-field">
+                <span>{t('ชื่อคีย์', 'Key')}</span>
+                <input
+                  type="text"
+                  value={arrayKey}
+                  onChange={(e) => setArrayKey(e.target.value)}
+                  placeholder="id"
+                  spellCheck={false}
+                />
+              </label>
+            )}
+            <Toggle
+              checked={showEqual}
+              onChange={setShowEqual}
+              th="แสดงค่าที่เหมือนกันด้วย"
+              en="Show equal"
+            />
+          </OptionGroup>
+          <OptionGroup th="สรุป" en="Summary">
+            <div className="summary-card">
+              <div className="summary-head">
+                <span className={total === 0 ? 'summary-total accent' : 'summary-total danger'}>
+                  {pair.ready ? total : '—'}
+                </span>
+                <span className="summary-label">{t('จุดที่ต่างกัน', 'differences')}</span>
+              </div>
+              {total > 0 && (
+                <div className="summary-bar" aria-hidden="true">
+                  {TYPES.filter((type) => counts[type] > 0).map((type) => (
+                    <span
+                      key={type}
+                      style={{ flex: counts[type], background: `var(--diff-${type})` }}
+                    />
+                  ))}
+                </div>
+              )}
+              <div className="summary-keys">
+                {keys ? keys.matched : '—'} {t('คีย์ที่ตรงกัน', 'matched')} · {keys ? keys.total : '—'}{' '}
+                {t('คีย์รวม', 'total keys')}
+              </div>
+            </div>
+          </OptionGroup>
+        </OptionsPanel>
+      </OptionsSlot>
+
       <footer className="statusbar">
         {pair.ready ? (
           <>
-            <span className={`badge ${diffs.length === 0 ? 'ok' : 'bad'}`}>
-              {diffs.length === 0 ? 'เหมือนกัน' : `ต่างกัน ${diffs.length} จุด`}
+            <span className={`badge ${total === 0 ? 'ok' : 'bad'}`}>
+              {total === 0 ? 'เหมือนกัน' : `ต่างกัน ${total} จุด`}
             </span>
             <span>ค่าต่างกัน {counts.changed}</span>
             <span>ชนิดต่างกัน {counts.type}</span>
