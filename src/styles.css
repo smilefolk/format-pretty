@@ -1,3 +1,61 @@
+/* ---------- ฟอนต์ (self-host ใน public/fonts — ไม่มี request ออกนอกเครื่อง) ---------- */
+
+@font-face {
+  font-family: 'IBM Plex Sans Thai';
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+  src: url('/fonts/IBMPlexSansThai-Regular.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'IBM Plex Sans Thai';
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+  src: url('/fonts/IBMPlexSansThai-Medium.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'IBM Plex Sans Thai';
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+  src: url('/fonts/IBMPlexSansThai-SemiBold.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'JetBrains Mono';
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+  src: url('/fonts/JetBrainsMono-Regular.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'JetBrains Mono';
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+  src: url('/fonts/JetBrainsMono-Medium.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'JetBrains Mono';
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+  src: url('/fonts/JetBrainsMono-SemiBold.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'JetBrains Mono';
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+  src: url('/fonts/JetBrainsMono-Bold.woff2') format('woff2');
+}
+
 :root,
 :root[data-theme='dark'] {
   /* พื้นผิว — ไล่จากมืดสุด (พื้นหน้า) ไปสว่างขึ้นตามความสูงของชั้น */
@@ -31,7 +89,7 @@
   --tok-null: #ff8f84;
   --tok-punct: #767b84;
 
-  /* ฟอนต์ (ไฟล์ฟอนต์เพิ่มใน T0.2) */
+  /* ฟอนต์ */
   --font-ui: 'IBM Plex Sans Thai', system-ui, sans-serif;
   --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
 
