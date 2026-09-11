@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import Editor from '../components/Editor'
 import OptionsPanel, { OptionGroup } from '../components/shell/OptionsPanel'
-import { OptionsSlot } from '../components/shell/slots'
+import { OptionsSlot, StatusSlot } from '../components/shell/slots'
 import { Badge, PaneHead, Segmented, Toggle } from '../components/ui'
 import { countKeys, diffJsonWithMeta, preview, summarize, toReport, typeLabel } from '../lib/diff'
 import { useT } from '../lib/i18n'
@@ -361,22 +361,17 @@ export default function Compare({
         </OptionsPanel>
       </OptionsSlot>
 
-      <footer className="statusbar">
-        {pair.ready ? (
-          <>
-            <span className={`badge ${total === 0 ? 'ok' : 'bad'}`}>
-              {total === 0 ? 'เหมือนกัน' : `ต่างกัน ${total} จุด`}
-            </span>
-            <span>ค่าต่างกัน {counts.changed}</span>
-            <span>ชนิดต่างกัน {counts.type}</span>
-            <span>เฉพาะซ้าย {counts.removed}</span>
-            <span>เฉพาะขวา {counts.added}</span>
-            <span className="muted">รายการในอาร์เรย์เทียบตามลำดับ (index)</span>
-          </>
+      <StatusSlot>
+        {!pair.ready ? (
+          <span>○ WAITING</span>
+        ) : total === 0 ? (
+          <span className="status-ok">● IDENTICAL</span>
         ) : (
-          <span className="badge">รอข้อมูล</span>
+          <span className="status-danger">● {total} DIFFS</span>
         )}
-      </footer>
+        <span>{keyName ? `BY KEY ${keyName}` : 'BY INDEX'}</span>
+        <span>DEEP</span>
+      </StatusSlot>
     </>
   )
 }
