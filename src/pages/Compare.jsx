@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import Editor from '../components/Editor'
 import { diffJson, preview, summarize, toReport, typeLabel } from '../lib/diff'
+import { L } from '../lib/i18n'
 import { parseJson } from '../lib/json'
 
 const SAMPLE_LEFT = `{
@@ -81,9 +82,11 @@ export default function Compare({ left, setLeft, right, setRight, notify }) {
     }
   }
 
-  const sideHead = (label, result) => (
+  const sideHead = (th, en, result) => (
     <div className="pane-head">
-      <h2>{label}</h2>
+      <h2>
+        <L th={th} en={en} />
+      </h2>
       {result.empty ? (
         <span className="badge">ว่าง</span>
       ) : result.ok ? (
@@ -143,7 +146,7 @@ export default function Compare({ left, setLeft, right, setRight, notify }) {
       <div className="compare">
         <div className="panes inputs">
           <section className="pane">
-            {sideHead('ก้อนซ้าย', leftResult)}
+            {sideHead('ก้อนซ้าย', 'Left', leftResult)}
             <Editor
               value={left}
               onChange={setLeft}
@@ -152,7 +155,7 @@ export default function Compare({ left, setLeft, right, setRight, notify }) {
             />
           </section>
           <section className="pane">
-            {sideHead('ก้อนขวา', rightResult)}
+            {sideHead('ก้อนขวา', 'Right', rightResult)}
             <Editor
               value={right}
               onChange={setRight}
@@ -164,7 +167,9 @@ export default function Compare({ left, setLeft, right, setRight, notify }) {
 
         <section className="pane diff-panel">
           <div className="pane-head">
-            <h2>จุดที่ต่างกัน</h2>
+            <h2>
+              <L th="จุดที่ต่างกัน" en="Differences" />
+            </h2>
             <span className="muted">
               {pair.ready ? `แสดง ${shown.length} จาก ${diffs.length} รายการ` : 'ยังเทียบไม่ได้'}
             </span>
