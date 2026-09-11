@@ -80,6 +80,9 @@ NDJSON / อ็อบเจ็กต์ที่ต่อกันให้เ�
   ไม่มีเครื่องหมายคำพูดครอบ คืน `layers` (ตัวเลข) + `peels[{ n, where:'string' }]`; `unwrapNested(value, { repeat })`
   แกะสตริง JSON ที่ซ่อนอยู่ในฟิลด์ย่อย คืน `{ value, count, fields[{ path, depth }], passes }` — หนึ่งรอบแกะ
   สตริง→อ็อบเจ็กต์จนสุด แต่สตริง→สตริง (escape ซ้อน) แกะทีละชั้น `repeat:true` วนจนนิ่ง (≤ 8 รอบ)
+- `src/lib/fix.js` — `fixJson(text)` แก้ JSON แบบกลไกจากตำแหน่ง error ของ `parseJson` (จุลภาคท้าย / จุลภาคซ้ำ /
+  single quote / คีย์ไม่มี quote) re-parse ยืนยันทุกรอบ ≤ 5 รอบ คืน `{ fixed, applied[] }` หรือ `null` — Formatter
+  โชว์ปุ่ม "แก้ให้อัตโนมัติ" เฉพาะเมื่อได้ผล และไม่ apply เอง (D7)
 - `src/lib/path.js` — `childPath(path, key)` สร้าง path `$.a[0]["k y"]` ใช้ร่วมกันใน `diff.js` (root `$`) และ
   `unwrap.js` (root `''`)
 
@@ -99,7 +102,18 @@ state ระดับแอปที่ไม่อยู่ต่อเอก�
 (`openTool`) หรือสร้างใหม่ถ้ายังไม่มี; `sendToFormatter` = เปิด doc `format` ใหม่พร้อมเนื้อหา
 
 เครื่องมือใหม่ = เพิ่มไฟล์ใน `src/pages/` + เพิ่มใน `TOOLS` (`components/shell/ToolRail.jsx`) และ
-`DOC_TOOLS` (`lib/docs.js`) + เพิ่มบล็อก `{doc.tool === '<ชื่อ>' && …}` ใน `App.jsx`
+`DOC_TOOLS` (`lib/docs.js`) + เพิ่มบล็อก `{doc.tool === '<ชื่อ>' && …}` ใน `App.jsx` + hook action ใน
+`hooks/useActions.js` + คำสั่งใน `lib/commands.js`
+
+### Action และ command palette (`src/hooks/useActions.js` + `src/lib/commands.js`)
+
+หน้าไม่เขียน handler เอง — เรียก `useFormatterActions()` / `useCompareActions()` / `useUnwrapActions()` ด้วย
+result/output ที่หน้าถืออยู่ แล้วได้ object ของ action (`format`, `minify`, `copy`, …) ไปผูกปุ่ม จากนั้น
+`usePublishActions(actions)` ลงทะเบียนเข้า `ActionsContext` (ref ที่ `App` ถือ) — ⌘K (`components/CommandPalette.jsx`)
+เรียก `listCommands(ctx)` จาก `lib/commands.js` ซึ่ง `run(ctx)` ไปเรียก `ctx.actions.<ชื่อ>` ตัวเดียวกับปุ่ม
+คำสั่งมี `when(ctx)` ซ่อนตาม tool และ `state(ctx)` คืน `'เปิดอยู่'` สำหรับตัวเลือกที่เปิดอยู่; `ctx` สร้างใน `App`
+(`commandCtx`: doc, docs, actions (getter อ่าน ref สด), set, openTool, newDoc, closeDoc, activateDoc, theme, lang)
+ตัวอย่างข้อมูลทุกหน้าอยู่ `lib/samples.js` (D4: เรียกจาก palette; หน้า Unwrap มีปุ่มสลับตัวอย่างด้วย)
 
 ### Shell (`src/components/shell/`)
 
