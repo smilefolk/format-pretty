@@ -196,17 +196,6 @@ body {
   flex-direction: column;
 }
 
-/* หน้าเดิมที่ยังเป็นการ์ดขอบมน (Diff / Unwrap จนกว่าจะถึงเฟส 4–5) ห่อด้วยตัวนี้ให้ไม่ชนขอบ
-   จะลบทิ้งใน T7.1 */
-.legacy-page {
-  flex: 1;
-  min-height: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  padding: 12px 14px;
-}
-
 /* --- top bar --- */
 
 .top-bar {

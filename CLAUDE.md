@@ -114,8 +114,8 @@ label สองภาษาใช้ `<L th en />` จาก `src/lib/i18n.jsx` 
 `CodeView` (ระบายสีด้วย `tokenize()` จาก `json.js`), `JsonTree` (มุมมองพับ/ขยาย), `ErrorCard` (การ์ด error
 ใต้ source pane: chip line:column + ปุ่มไปที่บรรทัด) — ตัวเลือก indent/view ที่ใช้ร่วมกันอยู่ใน `lib/constants.js`
 
-หน้าที่ redesign แล้วเรนเดอร์ชิดขอบ (Formatter ใน `.workbench`, Compare ใน `.compare-page`); หน้าที่ยังเป็นการ์ด
-แบบเดิม (Unwrap) ห่อด้วย `<div className="legacy-page">` ซึ่งถือ padding ไว้แทน `.shell-content` — ลบทิ้งเมื่อทุกหน้า redesign ครบ
+ทุกหน้าเรนเดอร์ชิดขอบใน `.shell-content` (Formatter / Unwrap ใช้ `.workbench` grid 1fr 1fr, Compare ใช้ `.compare-page`)
+และมี action bar ของตัวเองใต้ pane (`.action-bar`) — ไม่มี toolbar ระดับหน้าแล้ว
 
 ## Conventions
 

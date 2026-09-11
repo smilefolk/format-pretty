@@ -1,9 +1,12 @@
-import { Fragment, useMemo, useRef, useState } from 'react'
+import { Fragment, useMemo, useRef } from 'react'
 import CodeView from '../components/CodeView'
 import Editor from '../components/Editor'
 import ErrorCard from '../components/ErrorCard'
 import JsonTree from '../components/JsonTree'
-import { Badge, KeyCap, PaneHead } from '../components/ui'
+import OptionsPanel, { OptionGroup } from '../components/shell/OptionsPanel'
+import { OptionsSlot, StatusSlot } from '../components/shell/slots'
+import { Badge, KeyCap, PaneHead, Segmented, StatGrid, Toggle } from '../components/ui'
+import { INDENT_OPTIONS, VIEW_OPTIONS } from '../lib/constants'
 import { useLang, useT } from '../lib/i18n'
 import { formatBytes, getStats, stringify } from '../lib/json'
 import { unwrapJson, unwrapNested } from '../lib/unwrap'
@@ -26,20 +29,32 @@ function lastSegment(path) {
   return path
 }
 
-export default function Unwrap({ input, setInput, indent, setIndent, view, setView, notify, sendToFormatter }) {
+export default function Unwrap({
+  input,
+  setInput,
+  indent,
+  setIndent,
+  view,
+  setView,
+  deep,
+  setDeep,
+  repeat,
+  setRepeat,
+  notify,
+  sendToFormatter,
+}) {
   const t = useT()
   const lang = useLang()
   const editorRef = useRef(null)
-  const [deep, setDeep] = useState(true)
 
   const result = useMemo(() => unwrapJson(input), [input])
 
   const nested = useMemo(
     () =>
       result.ok && deep
-        ? unwrapNested(result.value)
+        ? unwrapNested(result.value, { repeat })
         : { value: result.value, count: 0, fields: [], passes: 1 },
-    [result, deep]
+    [result, deep, repeat]
   )
 
   // chain ชั้นที่แกะ: ชั้นนอก (string) ต่อด้วยฟิลด์ที่แกะได้ เรียงเลขต่อกัน
@@ -253,21 +268,53 @@ export default function Unwrap({ input, setInput, indent, setIndent, view, setVi
         </section>
       </div>
 
-      <footer className="statusbar">
+      <OptionsSlot>
+        <OptionsPanel th="ตั้งค่า" en="Options">
+          <OptionGroup>
+            <Toggle checked={deep} onChange={setDeep} th="แกะสตริงในฟิลด์ย่อย" en="Deep unwrap" />
+            <Toggle checked={repeat} onChange={setRepeat} th="แกะซ้ำจนสุด" en="Repeat until stable" />
+          </OptionGroup>
+          <OptionGroup th="ระยะเยื้อง" en="Indent">
+            <Segmented
+              options={INDENT_OPTIONS.map((o) => ({ ...o, label: t(o.th, o.en) }))}
+              value={indent}
+              onChange={setIndent}
+              ariaLabel={t('ระยะเยื้อง', 'Indent')}
+            />
+          </OptionGroup>
+          <OptionGroup th="มุมมอง" en="View">
+            <Segmented
+              options={VIEW_OPTIONS.map((o) => ({ ...o, label: t(o.th, o.en) }))}
+              value={view}
+              onChange={setView}
+              ariaLabel={t('มุมมอง', 'View')}
+            />
+          </OptionGroup>
+          <OptionGroup th="การแกะ" en="Result">
+            <StatGrid
+              items={[
+                { th: 'ชั้น', en: 'Layers', value: result.ok ? chain.length : '—', accent: true },
+                { th: 'ฟิลด์', en: 'Fields', value: result.ok ? nested.count : '—' },
+                { th: 'คีย์', en: 'Keys', value: stats ? stats.keys : '—' },
+                { th: 'ความลึก', en: 'Depth', value: stats ? stats.depth : '—' },
+              ]}
+            />
+          </OptionGroup>
+        </OptionsPanel>
+      </OptionsSlot>
+
+      <StatusSlot>
         {result.ok ? (
-          <>
-            <span className="badge ok">แกะสำเร็จ</span>
-            <span>แกะ {result.layers} ชั้น</span>
-            {nested.count > 0 && <span>ฟิลด์ที่แกะ {nested.count} จุด</span>}
-            <span>{stats.lines} บรรทัด</span>
-            <span>{formatBytes(stats.bytes)}</span>
-            <span>{stats.keys} คีย์</span>
-            <span>ความลึก {stats.depth}</span>
-          </>
+          <span className="status-ok">{chain.length > 0 ? `● UNWRAPPED ×${chain.length}` : '● JSON'}</span>
+        ) : result.empty ? (
+          <span>○ EMPTY</span>
         ) : (
-          <span className={`badge ${result.empty ? '' : 'bad'}`}>{result.empty ? 'ว่าง' : 'แกะไม่สำเร็จ'}</span>
+          <span className="status-danger">● FAILED</span>
         )}
-      </footer>
+        {deep && <span>DEEP</span>}
+        {repeat && nested.passes > 1 && <span>REPEAT ×{nested.passes}</span>}
+        <span>UTF-8</span>
+      </StatusSlot>
     </>
   )
 }
