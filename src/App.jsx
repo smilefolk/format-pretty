@@ -3,26 +3,37 @@ import Compare from './pages/Compare'
 import Formatter from './pages/Formatter'
 import Unwrap from './pages/Unwrap'
 import AppShell from './components/shell/AppShell'
+import DocTabs from './components/shell/DocTabs'
+import useDocs from './hooks/useDocs'
 import { LangContext, readLang, writeLang } from './lib/i18n'
 
-export default function App() {
-  const [page, setPage] = useState('format')
-  const [toast, setToast] = useState(null)
-  const [theme, setTheme] = useState(() => localStorage.getItem('fp-theme') || 'dark')
-  const [lang, setLang] = useState(readLang)
+// อ่านธีมแบบไม่พัง — SSR / private mode อาจไม่มี localStorage
+function readTheme() {
+  try {
+    return localStorage.getItem('fp-theme') === 'light' ? 'light' : 'dark'
+  } catch {
+    return 'dark'
+  }
+}
 
-  // สถานะของแต่ละหน้าอยู่ตรงนี้ เพื่อไม่ให้ข้อความหายเวลาสลับเมนู
-  const [input, setInput] = useState('')
-  const [indent, setIndent] = useState('2')
-  const [sortKeys, setSortKeys] = useState(false)
-  const [view, setView] = useState('code')
-  const [left, setLeft] = useState('')
-  const [right, setRight] = useState('')
-  const [rawString, setRawString] = useState('')
+export default function App() {
+  const [toast, setToast] = useState(null)
+  const [theme, setTheme] = useState(readTheme)
+  const [lang, setLang] = useState(readLang)
+  const notify = (message) => setToast(message)
+
+  // เนื้อหาและตัวเลือกของทุกหน้าอยู่ใน doc (lib/docs.js) — เครื่องมือที่แสดงคือ tool ของ doc ที่ active
+  const { docs, activeId, doc, open, close, rename, update, activate, openTool } = useDocs({
+    notify,
+  })
 
   useEffect(() => {
     document.documentElement.dataset.theme = theme
-    localStorage.setItem('fp-theme', theme)
+    try {
+      localStorage.setItem('fp-theme', theme)
+    } catch {
+      /* เก็บไม่ได้ก็ใช้ค่าในหน่วยความจำ */
+    }
   }, [theme])
 
   useEffect(() => {
@@ -36,11 +47,11 @@ export default function App() {
     return () => clearTimeout(id)
   }, [toast])
 
-  const notify = (message) => setToast(message)
+  // setter ต่อฟิลด์ของ doc ที่ active — หน้าเดิมรับ props รูปแบบ value/setValue อยู่แล้ว ไม่ต้องแก้หน้า
+  const field = (key) => (value) => update(doc.id, { [key]: value })
 
   const sendToFormatter = (text) => {
-    setInput(text)
-    setPage('format')
+    open('format', { name: 'จาก unwrap', input: text })
     notify('ส่งผลลัพธ์ไปหน้าจัดรูปแบบแล้ว')
   }
 
@@ -51,39 +62,59 @@ export default function App() {
   return (
     <LangContext.Provider value={lang}>
       <AppShell
-        tool={page}
-        onSelectTool={setPage}
+        tool={doc.tool}
+        onSelectTool={openTool}
         theme={theme}
         onThemeToggle={() => setTheme((t) => (t === 'dark' ? 'light' : 'dark'))}
         onLangChange={setLang}
         onCommandPalette={openPalette}
+        tabs={
+          <DocTabs
+            docs={docs}
+            activeId={activeId}
+            onActivate={activate}
+            onClose={close}
+            onOpen={() => open(doc.tool)}
+            onRename={rename}
+          />
+        }
       >
-        {page === 'format' && (
+        {/* key = doc.id ให้แต่ละเอกสารได้ instance ของหน้าใหม่ (state เฉพาะ UI ไม่ปนกัน) */}
+        {doc.tool === 'format' && (
           <Formatter
-            input={input}
-            setInput={setInput}
-            indent={indent}
-            setIndent={setIndent}
-            sortKeys={sortKeys}
-            setSortKeys={setSortKeys}
-            view={view}
-            setView={setView}
+            key={doc.id}
+            input={doc.input}
+            setInput={field('input')}
+            indent={doc.indent}
+            setIndent={field('indent')}
+            sortKeys={doc.sortKeys}
+            setSortKeys={field('sortKeys')}
+            view={doc.view}
+            setView={field('view')}
             notify={notify}
           />
         )}
 
-        {page === 'compare' && (
-          <Compare left={left} setLeft={setLeft} right={right} setRight={setRight} notify={notify} />
+        {doc.tool === 'compare' && (
+          <Compare
+            key={doc.id}
+            left={doc.left}
+            setLeft={field('left')}
+            right={doc.right}
+            setRight={field('right')}
+            notify={notify}
+          />
         )}
 
-        {page === 'unwrap' && (
+        {doc.tool === 'unwrap' && (
           <Unwrap
-            input={rawString}
-            setInput={setRawString}
-            indent={indent}
-            setIndent={setIndent}
-            view={view}
-            setView={setView}
+            key={doc.id}
+            input={doc.input}
+            setInput={field('input')}
+            indent={doc.indent}
+            setIndent={field('indent')}
+            view={doc.view}
+            setView={field('view')}
             notify={notify}
             sendToFormatter={sendToFormatter}
           />
