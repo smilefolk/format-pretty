@@ -1,9 +1,10 @@
 import { Fragment, useMemo, useRef, useState } from 'react'
 import CodeView from '../components/CodeView'
 import Editor from '../components/Editor'
+import ErrorCard from '../components/ErrorCard'
 import JsonTree from '../components/JsonTree'
-import { KeyCap, PaneHead } from '../components/ui'
-import { L, useLang, useT } from '../lib/i18n'
+import { Badge, KeyCap, PaneHead } from '../components/ui'
+import { useLang, useT } from '../lib/i18n'
 import { formatBytes, getStats, stringify } from '../lib/json'
 import { unwrapJson, unwrapNested } from '../lib/unwrap'
 
@@ -165,66 +166,89 @@ export default function Unwrap({ input, setInput, indent, setIndent, view, setVi
         </section>
 
         <section className="pane">
-          <div className="pane-head">
-            <h2>
-              <L th="ผลลัพธ์ JSON" en="Result" />
-            </h2>
-            <div className="tabs">
-              <button className={view === 'code' ? 'active' : ''} onClick={() => setView('code')}>
-                โค้ด
-              </button>
-              <button className={view === 'tree' ? 'active' : ''} onClick={() => setView('tree')}>
-                โครงสร้าง
-              </button>
-            </div>
-            <div className="pane-actions">
-              <button className="btn small" onClick={handleCopy}>
-                คัดลอก
-              </button>
-              <button className="btn small" onClick={handleDownload}>
-                ดาวน์โหลด
-              </button>
-            </div>
-          </div>
+          <PaneHead
+            th="ผลลัพธ์ JSON"
+            en="Result"
+            badge={
+              result.ok ? (
+                <Badge variant="ok">
+                  {chain.length > 0
+                    ? `${t('แกะสำเร็จ', 'Unwrapped')} ${chain.length} ${t('ชั้น', 'layers')}`
+                    : t('เป็น JSON อยู่แล้ว', 'Already JSON')}
+                </Badge>
+              ) : result.empty ? (
+                <Badge variant="neutral">{t('ว่าง', 'Empty')}</Badge>
+              ) : (
+                <Badge variant="danger">{t('แกะไม่สำเร็จ', 'Failed')}</Badge>
+              )
+            }
+          >
+            <button className="btn small" onClick={handleCopy}>
+              {t('คัดลอก', 'Copy')}
+            </button>
+            <button className="btn small" onClick={handleDownload}>
+              {t('ดาวน์โหลด', 'Download')}
+            </button>
+          </PaneHead>
 
           <div className="output">
-            {result.empty && <p className="placeholder">ยังไม่มีข้อมูล — วางสตริง JSON ที่ช่องด้านซ้าย</p>}
+            {result.empty && (
+              <p className="placeholder">
+                {t('ยังไม่มีข้อมูล — วางสตริง JSON ที่ช่องด้านซ้าย', 'Nothing yet — paste an escaped JSON string on the left')}
+              </p>
+            )}
 
             {result.error && (
-              <div className="error">
-                <strong>{result.layers > 0 ? 'แกะสตริงแล้ว แต่ข้างในไม่ใช่ JSON' : 'แกะเป็น JSON ไม่ได้'}</strong>
-                <p>{result.error.message}</p>
-                {result.error.line && (
-                  <p className="muted">
-                    บรรทัด {result.error.line} คอลัมน์ {result.error.column} (ของข้อความหลังแกะ {result.layers} ชั้น)
-                  </p>
-                )}
+              <ErrorCard
+                title={
+                  result.layers > 0
+                    ? t('แกะสตริงแล้ว แต่ข้างในไม่ใช่ JSON', 'Unwrapped, but the content is not JSON')
+                    : t('แกะเป็น JSON ไม่ได้', 'Cannot unwrap to JSON')
+                }
+                message={result.error.message}
+                line={result.error.line}
+                column={result.error.column}
+              >
                 {result.layers > 0 && (
                   <>
-                    <p className="muted">ข้อความที่แกะได้:</p>
+                    <p className="error-card-note">
+                      {t(
+                        `ข้อความหลังแกะ ${result.layers} ชั้น (ตำแหน่งข้างต้นอ้างอิงข้อความนี้):`,
+                        `Text after peeling ${result.layers} layer(s) — the position above refers to it:`
+                      )}
+                    </p>
                     <pre className="peeled">{result.peeled}</pre>
                   </>
                 )}
-              </div>
+              </ErrorCard>
             )}
 
             {result.ok && (
               <div className="result">
-                {(result.layers > 0 || nested.count > 0 || result.merged > 1) && (
-                  <p className="notice">
-                    {result.layers > 0 && `แกะสตริง ${result.layers} ชั้น`}
-                    {result.layers > 0 && (nested.count > 0 || result.merged > 1) && ' · '}
-                    {nested.count > 0 && `แกะสตริงในฟิลด์อีก ${nested.count} จุด`}
-                    {nested.count > 0 && result.merged > 1 && ' · '}
-                    {result.merged > 1 && `รวม JSON ${result.merged} ก้อนเป็นอาร์เรย์`}
-                  </p>
+                {chain.length === 0 && result.merged <= 1 && (
+                  <p className="result-hint">{t('ข้อมูลนี้เป็น JSON อยู่แล้ว ไม่ต้องแกะ', 'Already valid JSON — nothing to unwrap')}</p>
                 )}
-                {result.layers === 0 && nested.count === 0 && result.merged <= 1 && (
-                  <p className="notice">ข้อมูลนี้เป็น JSON อยู่แล้ว ไม่ต้องแกะ</p>
+                {result.merged > 1 && (
+                  <p className="notice">
+                    {t(`พบ JSON ${result.merged} ก้อนต่อกัน — รวมเป็นอาร์เรย์เดียวให้แล้ว`, `Found ${result.merged} JSON chunks — merged into one array`)}
+                  </p>
                 )}
                 {view === 'code' ? <CodeView code={output} /> : <JsonTree data={nested.value} />}
               </div>
             )}
+          </div>
+
+          <div className="action-bar">
+            <button
+              className="btn secondary"
+              onClick={() => (output ? sendToFormatter(output) : notify('ยังไม่มีผลลัพธ์'))}
+            >
+              {t('ส่งไปหน้าจัดรูปแบบ', 'Send to Formatter')}
+            </button>
+            <div className="spacer" />
+            <span className="pane-meta">
+              {stats ? `${stats.lines} ${t('บรรทัด', 'lines')} · ${stats.keys} ${t('คีย์', 'keys')}` : '—'}
+            </span>
           </div>
         </section>
       </div>
