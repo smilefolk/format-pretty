@@ -80,6 +80,9 @@ NDJSON / อ็อบเจ็กต์ที่ต่อกันให้เ�
   ไม่มีเครื่องหมายคำพูดครอบ คืน `layers` (ตัวเลข) + `peels[{ n, where:'string' }]`; `unwrapNested(value, { repeat })`
   แกะสตริง JSON ที่ซ่อนอยู่ในฟิลด์ย่อย คืน `{ value, count, fields[{ path, depth }], passes }` — หนึ่งรอบแกะ
   สตริง→อ็อบเจ็กต์จนสุด แต่สตริง→สตริง (escape ซ้อน) แกะทีละชั้น `repeat:true` วนจนนิ่ง (≤ 8 รอบ)
+- `src/lib/fix.js` — `fixJson(text)` แก้ JSON แบบกลไกจากตำแหน่ง error ของ `parseJson` (จุลภาคท้าย / จุลภาคซ้ำ /
+  single quote / คีย์ไม่มี quote) re-parse ยืนยันทุกรอบ ≤ 5 รอบ คืน `{ fixed, applied[] }` หรือ `null` — Formatter
+  โชว์ปุ่ม "แก้ให้อัตโนมัติ" เฉพาะเมื่อได้ผล และไม่ apply เอง (D7)
 - `src/lib/path.js` — `childPath(path, key)` สร้าง path `$.a[0]["k y"]` ใช้ร่วมกันใน `diff.js` (root `$`) และ
   `unwrap.js` (root `''`)
 

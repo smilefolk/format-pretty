@@ -7,8 +7,12 @@ import OptionsPanel, { OptionGroup } from '../components/shell/OptionsPanel'
 import { OptionsSlot, StatusSlot } from '../components/shell/slots'
 import { Badge, KeyCap, PaneHead, Segmented, StatGrid, Toggle } from '../components/ui'
 import { INDENT_OPTIONS, VIEW_OPTIONS } from '../lib/constants'
+import { fixJson } from '../lib/fix'
 import { useT } from '../lib/i18n'
 import { formatBytes, getStats, parseJson, sortKeysDeep, stringify } from '../lib/json'
+
+// ไม่ลอง auto-fix กับอินพุตที่ใหญ่กว่านี้ (ไบต์โดยประมาณ) กันหน้าหน่วงตอนพิมพ์
+const FIX_LIMIT = 256 * 1024
 
 export default function Formatter({
   input,
@@ -28,6 +32,11 @@ export default function Formatter({
   const editorRef = useRef(null)
 
   const result = useMemo(() => parseJson(input, { merge: mergeChunks }), [input, mergeChunks])
+  // ข้อเสนอแก้อัตโนมัติ (#33) — คิดเฉพาะเมื่อผิดพลาดและไฟล์ไม่ใหญ่ (fixJson parse ซ้ำได้ถึง 5 รอบ)
+  const fix = useMemo(
+    () => (result.error && input.length <= FIX_LIMIT ? fixJson(input) : null),
+    [result.error, input]
+  )
 
   const value = useMemo(
     () => (result.ok && sortKeys ? sortKeysDeep(result.value) : result.value),
@@ -43,6 +52,13 @@ export default function Formatter({
     setInput(output)
     notify('จัดรูปแบบเรียบร้อย')
   }, [result.ok, output, setInput, notify])
+
+  // D7: ไม่ auto-apply — ผู้ใช้กดเอง แล้วแจ้งให้ตรวจสอบ
+  const handleFix = () => {
+    if (!fix) return
+    setInput(fix.fixed)
+    notify(`แก้ ${fix.applied.length} จุด — ตรวจสอบก่อนใช้`)
+  }
 
   const handleMinify = () => {
     if (!result.ok) return notify('JSON ไม่ถูกต้อง ย่อขนาดไม่ได้')
@@ -115,6 +131,7 @@ export default function Formatter({
               line={result.error.line}
               column={result.error.column}
               onGoTo={(line) => editorRef.current?.focusLine(line)}
+              onFix={fix ? handleFix : undefined}
             />
           )}
           <div className="action-bar">
