@@ -196,17 +196,6 @@ body {
   flex-direction: column;
 }
 
-/* หน้าเดิมที่ยังเป็นการ์ดขอบมน (Diff / Unwrap จนกว่าจะถึงเฟส 4–5) ห่อด้วยตัวนี้ให้ไม่ชนขอบ
-   จะลบทิ้งใน T7.1 */
-.legacy-page {
-  flex: 1;
-  min-height: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  padding: 12px 14px;
-}
-
 /* --- top bar --- */
 
 .top-bar {
@@ -1317,6 +1306,53 @@ textarea.input::placeholder {
   }
 }
 
+/* ---------- หน้าแปลงสตริง (mock 3b) ---------- */
+
+/* การ์ด chain ชั้นที่แกะได้ — ใต้ editor เหนือ action bar */
+.peel-card {
+  flex: none;
+  margin: 0 14px 12px;
+  padding: 11px 13px;
+  border: 1px solid var(--border-soft);
+  border-radius: 9px;
+  background: var(--panel);
+}
+
+.peel-label {
+  font: 500 9.5px/1 var(--font-mono);
+  letter-spacing: 0.08em;
+  color: var(--muted-3);
+}
+
+.peel-chain {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.peel-chip {
+  padding: 3px 9px;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  background: var(--panel-2);
+  color: var(--text-2);
+  font: 500 10.5px/1.5 var(--font-mono);
+}
+
+/* ชั้นในสุด = ผลลัพธ์ที่ได้ */
+.peel-chip.last {
+  border-color: color-mix(in srgb, var(--accent) 32%, transparent);
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  color: var(--accent);
+}
+
+.peel-arrow {
+  color: var(--disabled);
+  font-size: 11px;
+}
+
 /* ---------- ข้อความที่แกะได้ (หน้าแปลงสตริง) ---------- */
 
 .peeled {
@@ -1326,10 +1362,32 @@ textarea.input::placeholder {
   overflow: auto;
   border-radius: 7px;
   background: var(--panel-2);
-  color: var(--text);
-  font: 12.5px/1.6 var(--font-mono);
+  color: var(--code-ink);
+  font: 400 11.5px/1.6 var(--font-mono);
   white-space: pre-wrap;
   word-break: break-all;
+}
+
+/* การ์ดล้มเหลวอยู่ในฝั่งผลลัพธ์ (ไม่ใช่ใต้ source) — กางเต็มกว้าง ชิดบน */
+.output > .error-card {
+  flex: 1;
+  align-self: flex-start;
+  margin: 14px;
+}
+
+.error-card-note {
+  margin: 8px 0 0;
+  font-size: 11.5px;
+  color: var(--muted);
+}
+
+/* ข้อความบอกว่าเป็น JSON อยู่แล้ว — จาง ๆ เหนือผลลัพธ์ */
+.result-hint {
+  margin: 0;
+  padding: 6px 14px;
+  border-bottom: 1px solid var(--border-soft);
+  font-size: 11.5px;
+  color: var(--muted-3);
 }
 
 /* ---------- หน้าเปรียบเทียบ (mock 3a) ---------- */

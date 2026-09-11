@@ -76,8 +76,12 @@ NDJSON / อ็อบเจ็กต์ที่ต่อกันให้เ�
   เพื่อจับคู่ด้วยค่าคีย์ (path `$.items[id=7]` / `$.items[sku="X1"]`) อาร์เรย์ที่จับคู่ไม่ได้ fallback เป็น index
   เฉพาะอาร์เรย์นั้น — `diffJsonWithMeta()` คืน `{ diffs, fallbacks }` ให้ UI แสดง notice;
   `countKeys()` นับใบที่ตรงกัน/รวม สำหรับการ์ดสรุป; `summarize()` / `toReport()` ไม่นับ `equal`
-- `src/lib/unwrap.js` — แกะ JSON ที่ถูก escape เป็นสตริง ทีละชั้นสูงสุด 12 ชั้น รองรับทั้งแบบมีและ
-  ไม่มีเครื่องหมายคำพูดครอบ ส่วน `unwrapNested()` แกะสตริง JSON ที่ซ่อนอยู่ในฟิลด์ย่อย
+- `src/lib/unwrap.js` — `unwrapJson()` แกะ JSON ที่ถูก escape เป็นสตริง ทีละชั้นสูงสุด 12 ชั้น รองรับทั้งแบบมีและ
+  ไม่มีเครื่องหมายคำพูดครอบ คืน `layers` (ตัวเลข) + `peels[{ n, where:'string' }]`; `unwrapNested(value, { repeat })`
+  แกะสตริง JSON ที่ซ่อนอยู่ในฟิลด์ย่อย คืน `{ value, count, fields[{ path, depth }], passes }` — หนึ่งรอบแกะ
+  สตริง→อ็อบเจ็กต์จนสุด แต่สตริง→สตริง (escape ซ้อน) แกะทีละชั้น `repeat:true` วนจนนิ่ง (≤ 8 รอบ)
+- `src/lib/path.js` — `childPath(path, key)` สร้าง path `$.a[0]["k y"]` ใช้ร่วมกันใน `diff.js` (root `$`) และ
+  `unwrap.js` (root `''`)
 
 ### State ของเนื้อหาอยู่ใน "เอกสาร" (`src/lib/docs.js` + `src/hooks/useDocs.js`)
 
@@ -110,8 +114,8 @@ label สองภาษาใช้ `<L th en />` จาก `src/lib/i18n.jsx` 
 `CodeView` (ระบายสีด้วย `tokenize()` จาก `json.js`), `JsonTree` (มุมมองพับ/ขยาย), `ErrorCard` (การ์ด error
 ใต้ source pane: chip line:column + ปุ่มไปที่บรรทัด) — ตัวเลือก indent/view ที่ใช้ร่วมกันอยู่ใน `lib/constants.js`
 
-หน้าที่ redesign แล้วเรนเดอร์ชิดขอบ (Formatter ใน `.workbench`, Compare ใน `.compare-page`); หน้าที่ยังเป็นการ์ด
-แบบเดิม (Unwrap) ห่อด้วย `<div className="legacy-page">` ซึ่งถือ padding ไว้แทน `.shell-content` — ลบทิ้งเมื่อทุกหน้า redesign ครบ
+ทุกหน้าเรนเดอร์ชิดขอบใน `.shell-content` (Formatter / Unwrap ใช้ `.workbench` grid 1fr 1fr, Compare ใช้ `.compare-page`)
+และมี action bar ของตัวเองใต้ pane (`.action-bar`) — ไม่มี toolbar ระดับหน้าแล้ว
 
 ## Conventions
 
