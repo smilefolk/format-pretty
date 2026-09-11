@@ -1370,6 +1370,26 @@ textarea.input::placeholder {
   background: transparent;
 }
 
+/* ช่องค้นหาเส้นทางใน header รายการต่าง */
+.search-input {
+  min-width: 170px;
+  padding: 5px 10px;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  background: var(--panel);
+  color: var(--text);
+  font: 400 11.5px/1.4 var(--font-ui);
+}
+
+.search-input::placeholder {
+  color: var(--disabled);
+}
+
+.search-input:focus {
+  border-color: var(--accent);
+  outline: none;
+}
+
 .compare {
   flex: 1;
   min-height: 0;

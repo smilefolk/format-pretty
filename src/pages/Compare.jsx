@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react'
 import Editor from '../components/Editor'
 import { Badge, PaneHead } from '../components/ui'
 import { diffJson, preview, summarize, toReport, typeLabel } from '../lib/diff'
-import { L, useT } from '../lib/i18n'
+import { useT } from '../lib/i18n'
 import { parseJson } from '../lib/json'
 
 // ตัวอย่างสำหรับ command palette (#34) — ปุ่มตัวอย่างออกจากหน้าแล้วตาม D4
@@ -37,6 +37,8 @@ const FILTERS = [
 export default function Compare({ left, setLeft, right, setRight, notify }) {
   const t = useT()
   const [filter, setFilter] = useState('all')
+  // คำค้นเส้นทาง — state เฉพาะ UI ของหน้า (ไม่อยู่ใน doc)
+  const [query, setQuery] = useState('')
 
   const leftResult = useMemo(() => parseJson(left), [left])
   const rightResult = useMemo(() => parseJson(right), [right])
@@ -59,7 +61,10 @@ export default function Compare({ left, setLeft, right, setRight, notify }) {
   )
 
   const counts = useMemo(() => summarize(diffs), [diffs])
-  const shown = filter === 'all' ? diffs : diffs.filter((d) => d.type === filter)
+  const needle = query.trim().toLowerCase()
+  const shown = diffs.filter(
+    (d) => (filter === 'all' || d.type === filter) && (!needle || d.path.toLowerCase().includes(needle))
+  )
 
   const handleSwap = () => {
     setLeft(right)
@@ -131,14 +136,33 @@ export default function Compare({ left, setLeft, right, setRight, notify }) {
         </div>
 
         <section className="pane diff-panel">
-          <div className="pane-head">
-            <h2>
-              <L th="จุดที่ต่างกัน" en="Differences" />
-            </h2>
-            <span className="muted">
-              {pair.ready ? `แสดง ${shown.length} จาก ${diffs.length} รายการ` : 'ยังเทียบไม่ได้'}
-            </span>
-          </div>
+          <PaneHead
+            th="จุดที่ต่างกัน"
+            en="Differences"
+            badge={
+              !pair.ready ? (
+                <Badge variant="neutral">{t('รอข้อมูล', 'Waiting')}</Badge>
+              ) : diffs.length === 0 ? (
+                <Badge variant="ok">{t('เหมือนกัน', 'Identical')}</Badge>
+              ) : (
+                <Badge variant="danger">
+                  {diffs.length} {t('จุด', diffs.length === 1 ? 'diff' : 'diffs')}
+                </Badge>
+              )
+            }
+          >
+            <input
+              type="search"
+              className="search-input"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder={t('ค้นหาเส้นทาง…', 'Search path…')}
+              aria-label={t('ค้นหาเส้นทาง', 'Search path')}
+            />
+            <button className="btn small" onClick={handleCopyReport}>
+              {t('คัดลอกรายงาน', 'Copy report')}
+            </button>
+          </PaneHead>
 
           <div className="output">
             {!pair.ready && (
@@ -160,7 +184,9 @@ export default function Compare({ left, setLeft, right, setRight, notify }) {
                 {diffs.length === 0 ? (
                   <p className="placeholder same">ข้อมูลสองก้อนเหมือนกันทุกประการ</p>
                 ) : shown.length === 0 ? (
-                  <p className="placeholder">ไม่มีรายการในตัวกรองนี้</p>
+                  <p className="placeholder">
+                    {needle ? `ไม่พบเส้นทางที่ตรงกับ "${query.trim()}"` : 'ไม่มีรายการในตัวกรองนี้'}
+                  </p>
                 ) : (
                   <ul className="diff-list">
                     {shown.map((d) => (
