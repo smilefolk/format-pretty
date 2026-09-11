@@ -188,40 +188,47 @@ export default function Compare({ left, setLeft, right, setRight, notify }) {
                     {needle ? `ไม่พบเส้นทางที่ตรงกับ "${query.trim()}"` : 'ไม่มีรายการในตัวกรองนี้'}
                   </p>
                 ) : (
-                  <ul className="diff-list">
+                  <div className="diff-list">
                     {shown.map((d) => (
-                      <li
+                      <div
                         key={d.path + d.type}
                         className={`diff-row ${d.type}`}
+                        role="button"
+                        tabIndex={0}
                         onClick={() => copyPath(d.path)}
-                        title="คลิกเพื่อคัดลอกเส้นทาง"
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault()
+                            copyPath(d.path)
+                          }
+                        }}
+                        title={t('คลิกเพื่อคัดลอกเส้นทาง', 'Click to copy the path')}
                       >
-                        <div className="diff-head">
-                          <span className={`chip ${d.type}`}>{typeLabel(d.type)}</span>
-                          <code className="diff-path">{d.path}</code>
-                          {d.kinds && (
-                            <span className="muted">
-                              {d.kinds[0]} → {d.kinds[1]}
-                            </span>
-                          )}
-                        </div>
+                        <Badge variant={d.type}>{typeLabel(d.type)}</Badge>
+                        <span className="diff-path" title={d.path}>
+                          <code>{d.path}</code>
+                          <span className="diff-copy-chip" aria-hidden="true">
+                            {t('คัดลอก', 'copy')}
+                          </span>
+                        </span>
+                        <span className="diff-kinds">
+                          {d.kinds ? `${d.kinds[0]} → ${d.kinds[1]}` : ''}
+                        </span>
                         <div className="diff-values">
-                          {d.type !== 'added' && (
-                            <div className="side left">
-                              <span>ซ้าย</span>
-                              <code>{preview(d.left)}</code>
-                            </div>
+                          {d.type === 'added' ? (
+                            <span className="diff-missing">{t('ไม่มีในก้อนซ้าย', 'Not in left')}</span>
+                          ) : (
+                            <code className="diff-pill left">{preview(d.left)}</code>
                           )}
-                          {d.type !== 'removed' && (
-                            <div className="side right">
-                              <span>ขวา</span>
-                              <code>{preview(d.right)}</code>
-                            </div>
+                          {d.type === 'removed' ? (
+                            <span className="diff-missing">{t('ไม่มีในก้อนขวา', 'Not in right')}</span>
+                          ) : (
+                            <code className="diff-pill right">{preview(d.right)}</code>
                           )}
                         </div>
-                      </li>
+                      </div>
                     ))}
-                  </ul>
+                  </div>
                 )}
               </div>
             )}
