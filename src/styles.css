@@ -1268,6 +1268,167 @@ textarea.input::placeholder {
   color: var(--text);
 }
 
+/* ---------- command palette (components/CommandPalette, mock 3c) ---------- */
+
+.palette-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 12vh 16px 16px;
+  background: color-mix(in srgb, var(--bg) 60%, transparent);
+}
+
+.palette {
+  display: flex;
+  flex-direction: column;
+  width: 544px;
+  max-width: 100%;
+  max-height: 100%;
+  border: 1px solid var(--border-strong);
+  border-radius: 10px;
+  background: var(--chrome);
+  box-shadow: var(--shadow-overlay);
+  overflow: hidden;
+}
+
+.palette-query {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+.palette-prompt {
+  font: 600 13px/1 var(--font-mono);
+  color: var(--accent);
+}
+
+.palette-input {
+  flex: 1;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--text);
+  font: 400 14px/1.4 var(--font-ui);
+  caret-color: var(--accent);
+  outline: none;
+}
+
+.palette-input::placeholder {
+  color: var(--disabled);
+}
+
+/* keycap ใน palette จางกว่าใน top bar */
+.palette .keycap {
+  background: var(--panel-2);
+  color: var(--muted);
+}
+
+.palette-query .keycap {
+  padding: 2px 6px;
+  border-radius: 5px;
+  color: var(--muted-2);
+}
+
+.palette-list {
+  max-height: 360px;
+  padding: 8px 8px 10px;
+  overflow: auto;
+}
+
+.palette-group {
+  padding: 7px 10px 5px;
+  font: 500 9.5px/1 var(--font-mono);
+  letter-spacing: 0.08em;
+  color: var(--muted-3);
+}
+
+[role='group'] + [role='group'] > .palette-group {
+  padding-top: 12px;
+}
+
+.palette-row {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.palette-row.selected {
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+}
+
+.palette-glyph {
+  flex: none;
+  width: 18px;
+  text-align: center;
+  font: 600 12px/1 var(--font-mono);
+  color: var(--muted-2);
+}
+
+.palette-row.selected .palette-glyph {
+  color: var(--accent);
+}
+
+.palette-name {
+  flex: 1;
+  min-width: 0;
+  font-size: 13px;
+  color: var(--text-2);
+}
+
+.palette-row.selected .palette-name {
+  font-weight: 500;
+  color: var(--text);
+}
+
+.palette-hint {
+  font: 400 10.5px/1.4 var(--font-mono);
+  color: var(--disabled);
+  white-space: nowrap;
+}
+
+.palette-row.selected .palette-hint {
+  color: var(--muted-3);
+}
+
+.palette-pill {
+  padding: 1px 7px;
+  border-radius: 99px;
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+  color: var(--accent);
+  font: 600 10px/1.7 var(--font-ui);
+}
+
+.palette-empty {
+  margin: 0;
+  padding: 18px 10px;
+  text-align: center;
+  font-size: 12.5px;
+  color: var(--muted-3);
+}
+
+.palette-footer {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 8px 16px;
+  border-top: 1px solid var(--border);
+  font: 400 10.5px/1 var(--font-mono);
+  color: var(--muted-3);
+}
+
+.palette-count {
+  margin-left: auto;
+}
+
 /* ---------- toast ---------- */
 
 .toast {

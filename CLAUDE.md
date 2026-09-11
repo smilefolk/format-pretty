@@ -102,7 +102,18 @@ state ระดับแอปที่ไม่อยู่ต่อเอก�
 (`openTool`) หรือสร้างใหม่ถ้ายังไม่มี; `sendToFormatter` = เปิด doc `format` ใหม่พร้อมเนื้อหา
 
 เครื่องมือใหม่ = เพิ่มไฟล์ใน `src/pages/` + เพิ่มใน `TOOLS` (`components/shell/ToolRail.jsx`) และ
-`DOC_TOOLS` (`lib/docs.js`) + เพิ่มบล็อก `{doc.tool === '<ชื่อ>' && …}` ใน `App.jsx`
+`DOC_TOOLS` (`lib/docs.js`) + เพิ่มบล็อก `{doc.tool === '<ชื่อ>' && …}` ใน `App.jsx` + hook action ใน
+`hooks/useActions.js` + คำสั่งใน `lib/commands.js`
+
+### Action และ command palette (`src/hooks/useActions.js` + `src/lib/commands.js`)
+
+หน้าไม่เขียน handler เอง — เรียก `useFormatterActions()` / `useCompareActions()` / `useUnwrapActions()` ด้วย
+result/output ที่หน้าถืออยู่ แล้วได้ object ของ action (`format`, `minify`, `copy`, …) ไปผูกปุ่ม จากนั้น
+`usePublishActions(actions)` ลงทะเบียนเข้า `ActionsContext` (ref ที่ `App` ถือ) — ⌘K (`components/CommandPalette.jsx`)
+เรียก `listCommands(ctx)` จาก `lib/commands.js` ซึ่ง `run(ctx)` ไปเรียก `ctx.actions.<ชื่อ>` ตัวเดียวกับปุ่ม
+คำสั่งมี `when(ctx)` ซ่อนตาม tool และ `state(ctx)` คืน `'เปิดอยู่'` สำหรับตัวเลือกที่เปิดอยู่; `ctx` สร้างใน `App`
+(`commandCtx`: doc, docs, actions (getter อ่าน ref สด), set, openTool, newDoc, closeDoc, activateDoc, theme, lang)
+ตัวอย่างข้อมูลทุกหน้าอยู่ `lib/samples.js` (D4: เรียกจาก palette; หน้า Unwrap มีปุ่มสลับตัวอย่างด้วย)
 
 ### Shell (`src/components/shell/`)
 

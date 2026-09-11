@@ -1,7 +1,8 @@
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import Compare from './pages/Compare'
 import Formatter from './pages/Formatter'
 import Unwrap from './pages/Unwrap'
+import CommandPalette from './components/CommandPalette'
 import AppShell from './components/shell/AppShell'
 import DocTabs from './components/shell/DocTabs'
 import { ActionsContext } from './hooks/useActions'
@@ -78,10 +79,31 @@ export default function App() {
     notify('ส่งผลลัพธ์ไปหน้าจัดรูปแบบแล้ว')
   }
 
-  // ⌘K ยังเป็น stub จนกว่า CommandPalette (#35) จะเสร็จ — commandCtx พร้อมแล้ว
-  const openPalette = () =>
-    notify(lang === 'en' ? 'Command palette is coming soon' : 'ค้นหาคำสั่ง (⌘K) กำลังจะมา')
-  void commandCtx
+  // ⌘K — จำ element ที่ focus อยู่ก่อนเปิด แล้วคืนให้ตอนปิด (caret ใน textarea ไม่ขยับ)
+  const [paletteOpen, setPaletteOpen] = useState(false)
+  const returnFocusRef = useRef(null)
+  const openPalette = useCallback(() => {
+    returnFocusRef.current = document.activeElement
+    setPaletteOpen(true)
+  }, [])
+  const closePalette = useCallback(() => {
+    setPaletteOpen(false)
+    const el = returnFocusRef.current
+    returnFocusRef.current = null
+    if (el && typeof el.focus === 'function' && document.contains(el)) el.focus()
+  }, [])
+
+  useEffect(() => {
+    const onKeyDown = (e) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault()
+        if (paletteOpen) closePalette()
+        else openPalette()
+      }
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [paletteOpen, openPalette, closePalette])
 
   return (
     <LangContext.Provider value={lang}>
@@ -158,6 +180,7 @@ export default function App() {
           )}
 
           {toast && <div className="toast">{toast}</div>}
+          <CommandPalette open={paletteOpen} onClose={closePalette} ctx={commandCtx} />
         </AppShell>
       </ActionsContext.Provider>
     </LangContext.Provider>
