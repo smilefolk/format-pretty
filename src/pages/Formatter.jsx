@@ -1,6 +1,7 @@
 import { useCallback, useMemo, useRef } from 'react'
 import CodeView from '../components/CodeView'
 import Editor from '../components/Editor'
+import ErrorCard from '../components/ErrorCard'
 import JsonTree from '../components/JsonTree'
 import OptionsPanel, { OptionGroup } from '../components/shell/OptionsPanel'
 import { OptionsSlot } from '../components/shell/slots'
@@ -106,6 +107,15 @@ export default function Formatter({
               'วางหลายก้อนต่อกันได้ (NDJSON หรือคั่นด้วย ,) ระบบจะรวมเป็นอาร์เรย์ให้อัตโนมัติ'
             }
           />
+          {result.error && (
+            <ErrorCard
+              title={t('JSON ไม่ถูกต้อง', 'Invalid JSON')}
+              message={result.error.message}
+              line={result.error.line}
+              column={result.error.column}
+              onGoTo={(line) => editorRef.current?.focusLine(line)}
+            />
+          )}
           <div className="action-bar">
             <button className="btn primary" onClick={handleFormat}>
               {t('จัดรูปแบบ', 'Format')}
@@ -161,15 +171,12 @@ export default function Formatter({
               <p className="placeholder">{t('ยังไม่มีข้อมูล — วาง JSON ที่ช่องด้านซ้าย', 'Nothing yet — paste JSON on the left')}</p>
             )}
             {result.error && (
-              <div className="error">
-                <strong>JSON ไม่ถูกต้อง</strong>
-                <p>{result.error.message}</p>
-                {result.error.line && (
-                  <p className="muted">
-                    บรรทัด {result.error.line} คอลัมน์ {result.error.column}
-                  </p>
+              <p className="placeholder">
+                {t(
+                  'แก้ข้อผิดพลาดในต้นฉบับก่อน — ผลลัพธ์จะแสดงที่นี่',
+                  'Fix the source first — the result will appear here'
                 )}
-              </div>
+              </p>
             )}
             {result.ok && (
               <div className="result">
