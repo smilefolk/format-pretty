@@ -2,14 +2,9 @@ import { useCallback, useMemo, useRef } from 'react'
 import CodeView from '../components/CodeView'
 import Editor from '../components/Editor'
 import JsonTree from '../components/JsonTree'
-import { L } from '../lib/i18n'
+import { KeyCap, PaneHead } from '../components/ui'
+import { L, useT } from '../lib/i18n'
 import { formatBytes, getStats, parseJson, sortKeysDeep, stringify } from '../lib/json'
-
-const SAMPLE = `{"name":"FormatPritty","version":"1.0.0","tags":["json","formatter","react"],"config":{"indent":2,"sortKeys":false,"theme":"dark"},"stats":{"users":1284,"rating":4.8,"active":true,"deprecated":null},"authors":[{"name":"Somchai","role":"dev"},{"name":"Malee","role":"design"}]}`
-
-const SAMPLE_MULTI = `{"id":1,"user":"somchai","action":"login"}
-{"id":2,"user":"malee","action":"upload","size":4821}
-{"id":3,"user":"somchai","action":"logout"}`
 
 const INDENTS = [
   { value: '2', label: '2 ช่อง' },
@@ -30,7 +25,9 @@ export default function Formatter({
   setView,
   notify,
 }) {
+  const t = useT()
   const fileRef = useRef(null)
+  const editorRef = useRef(null)
 
   const result = useMemo(() => parseJson(input, { merge: mergeChunks }), [input, mergeChunks])
 
@@ -93,76 +90,15 @@ export default function Formatter({
 
   return (
     <>
-      <div className="toolbar">
-        <button className="btn primary" onClick={handleFormat}>
-          จัดรูปแบบ <kbd>⌘↵</kbd>
-        </button>
-        <button className="btn" onClick={handleMinify}>
-          ย่อขนาด
-        </button>
-
-        <label className="field">
-          ระยะเยื้อง
-          <select value={indent} onChange={(e) => setIndent(e.target.value)}>
-            {INDENTS.map((i) => (
-              <option key={i.value} value={i.value}>
-                {i.label}
-              </option>
-            ))}
-          </select>
-        </label>
-
-        <label className="check">
-          <input type="checkbox" checked={sortKeys} onChange={(e) => setSortKeys(e.target.checked)} />
-          เรียงคีย์ A→Z
-        </label>
-
-        <label className="check">
-          <input
-            type="checkbox"
-            checked={mergeChunks}
-            onChange={(e) => setMergeChunks(e.target.checked)}
-          />
-          รวมหลายก้อนเป็นอาร์เรย์
-        </label>
-
-        <div className="spacer" />
-
-        <button className="btn" onClick={() => fileRef.current?.click()}>
-          เปิดไฟล์
-        </button>
-        <button className="btn" onClick={() => setInput(SAMPLE)}>
-          ตัวอย่าง
-        </button>
-        <button className="btn" onClick={() => setInput(SAMPLE_MULTI)}>
-          ตัวอย่างหลายก้อน
-        </button>
-        <button className="btn" onClick={() => setInput('')}>
-          ล้าง
-        </button>
-        <input
-          ref={fileRef}
-          type="file"
-          accept=".json,.txt,application/json"
-          hidden
-          onChange={(e) => {
-            readFile(e.target.files?.[0])
-            e.target.value = ''
-          }}
-        />
-      </div>
-
-      <main className="panes">
-        <section className="pane">
-          <div className="pane-head">
-            <h2>
-              <L th="ต้นฉบับ" en="Source" />
-            </h2>
-            <span className="muted">
-              {input.split('\n').length} บรรทัด · {formatBytes(new Blob([input]).size)}
+      <div className="workbench">
+        <section className="pane source">
+          <PaneHead th="ต้นฉบับ" en="Source">
+            <span className="pane-meta">
+              {input.split('\n').length} {t('บรรทัด', 'lines')} · {formatBytes(new Blob([input]).size)}
             </span>
-          </div>
+          </PaneHead>
           <Editor
+            ref={editorRef}
             value={input}
             onChange={setInput}
             errorLine={result.error?.line}
@@ -173,6 +109,32 @@ export default function Formatter({
               'วางหลายก้อนต่อกันได้ (NDJSON หรือคั่นด้วย ,) ระบบจะรวมเป็นอาร์เรย์ให้อัตโนมัติ'
             }
           />
+          <div className="action-bar">
+            <button className="btn primary" onClick={handleFormat}>
+              {t('จัดรูปแบบ', 'Format')}
+              <KeyCap variant="primary">⌘↵</KeyCap>
+            </button>
+            <button className="btn secondary" onClick={handleMinify}>
+              {t('ย่อขนาด', 'Minify')}
+            </button>
+            <div className="spacer" />
+            <button className="btn ghost" onClick={() => fileRef.current?.click()}>
+              {t('เปิดไฟล์', 'Open file')}
+            </button>
+            <button className="btn ghost" onClick={() => setInput('')}>
+              {t('ล้าง', 'Clear')}
+            </button>
+            <input
+              ref={fileRef}
+              type="file"
+              accept=".json,.txt,application/json"
+              hidden
+              onChange={(e) => {
+                readFile(e.target.files?.[0])
+                e.target.value = ''
+              }}
+            />
+          </div>
         </section>
 
         <section className="pane">
@@ -221,7 +183,7 @@ export default function Formatter({
             )}
           </div>
         </section>
-      </main>
+      </div>
 
       <footer className="statusbar">
         {result.ok ? (

@@ -64,7 +64,7 @@ export default function Unwrap({ input, setInput, indent, setIndent, view, setVi
   }
 
   return (
-    <>
+    <div className="legacy-page">
       <div className="toolbar">
         <label className="check">
           <input type="checkbox" checked={deep} onChange={(e) => setDeep(e.target.checked)} />
@@ -203,6 +203,6 @@ export default function Unwrap({ input, setInput, indent, setIndent, view, setVi
           <span className={`badge ${result.empty ? '' : 'bad'}`}>{result.empty ? 'ว่าง' : 'แกะไม่สำเร็จ'}</span>
         )}
       </footer>
-    </>
+    </div>
   )
 }
