@@ -1,10 +1,12 @@
 import { useMemo, useState } from 'react'
 import Editor from '../components/Editor'
+import { Badge, PaneHead } from '../components/ui'
 import { diffJson, preview, summarize, toReport, typeLabel } from '../lib/diff'
-import { L } from '../lib/i18n'
+import { L, useT } from '../lib/i18n'
 import { parseJson } from '../lib/json'
 
-const SAMPLE_LEFT = `{
+// ตัวอย่างสำหรับ command palette (#34) — ปุ่มตัวอย่างออกจากหน้าแล้วตาม D4
+export const SAMPLE_LEFT = `{
   "id": 1024,
   "name": "Somchai",
   "active": true,
@@ -14,7 +16,7 @@ const SAMPLE_LEFT = `{
   "legacyField": "ยังอยู่ในก้อนซ้าย"
 }`
 
-const SAMPLE_RIGHT = `{
+export const SAMPLE_RIGHT = `{
   "id": "1024",
   "name": "Somchai",
   "active": false,
@@ -33,6 +35,7 @@ const FILTERS = [
 ]
 
 export default function Compare({ left, setLeft, right, setRight, notify }) {
+  const t = useT()
   const [filter, setFilter] = useState('all')
 
   const leftResult = useMemo(() => parseJson(left), [left])
@@ -82,72 +85,29 @@ export default function Compare({ left, setLeft, right, setRight, notify }) {
     }
   }
 
-  const sideHead = (th, en, result) => (
-    <div className="pane-head">
-      <h2>
-        <L th={th} en={en} />
-      </h2>
-      {result.empty ? (
-        <span className="badge">ว่าง</span>
-      ) : result.ok ? (
-        <span className="badge ok">ถูกต้อง</span>
-      ) : (
-        <span className="badge bad" title={result.error.message}>
-          ผิดพลาด · บรรทัด {result.error.line ?? '?'}
-        </span>
-      )}
-    </div>
-  )
+  const sideBadge = (result) =>
+    result.empty ? (
+      <Badge variant="neutral">{t('ว่าง', 'Empty')}</Badge>
+    ) : result.ok ? (
+      <Badge variant="ok">{t('ถูกต้อง', 'Valid')}</Badge>
+    ) : (
+      <Badge variant="danger" title={result.error.message}>
+        {t('ผิดพลาด', 'Invalid')} · {t('บรรทัด', 'line')} {result.error.line ?? '?'}
+      </Badge>
+    )
 
   return (
-    <div className="legacy-page">
-      <div className="toolbar">
-        <div className="tabs">
-          {FILTERS.map((f) => (
-            <button
-              key={f.value}
-              className={filter === f.value ? 'active' : ''}
-              onClick={() => setFilter(f.value)}
-            >
-              {f.label}
-              {f.value !== 'all' && counts[f.value] > 0 && ` (${counts[f.value]})`}
-            </button>
-          ))}
-        </div>
-
-        <div className="spacer" />
-
-        <button className="btn" onClick={handleSwap}>
-          สลับซ้าย–ขวา
-        </button>
-        <button className="btn" onClick={handleCopyReport}>
-          คัดลอกรายงาน
-        </button>
-        <button
-          className="btn"
-          onClick={() => {
-            setLeft(SAMPLE_LEFT)
-            setRight(SAMPLE_RIGHT)
-          }}
-        >
-          ตัวอย่าง
-        </button>
-        <button
-          className="btn"
-          onClick={() => {
-            setLeft('')
-            setRight('')
-          }}
-        >
-          ล้าง
-        </button>
-      </div>
-
-      <div className="compare">
-        <div className="panes inputs">
-          <section className="pane">
-            {sideHead('ก้อนซ้าย', 'Left', leftResult)}
+    <>
+      <div className="compare-page">
+        <div className="compare-inputs">
+          <section className="pane source">
+            <PaneHead th="ก้อนซ้าย" en="Left" badge={sideBadge(leftResult)}>
+              <span className="pane-meta">
+                {left.split('\n').length} {t('บรรทัด', 'lines')}
+              </span>
+            </PaneHead>
             <Editor
+              dense
               value={left}
               onChange={setLeft}
               errorLine={leftResult.error?.line}
@@ -155,8 +115,13 @@ export default function Compare({ left, setLeft, right, setRight, notify }) {
             />
           </section>
           <section className="pane">
-            {sideHead('ก้อนขวา', 'Right', rightResult)}
+            <PaneHead th="ก้อนขวา" en="Right" badge={sideBadge(rightResult)}>
+              <button className="btn small" onClick={handleSwap}>
+                {t('สลับซ้าย–ขวา', 'Swap sides')}
+              </button>
+            </PaneHead>
             <Editor
+              dense
               value={right}
               onChange={setRight}
               errorLine={rightResult.error?.line}
@@ -254,6 +219,6 @@ export default function Compare({ left, setLeft, right, setRight, notify }) {
           <span className="badge">รอข้อมูล</span>
         )}
       </footer>
-    </div>
+    </>
   )
 }

@@ -887,6 +887,14 @@ textarea.input::placeholder {
   line-height: 1.75;
 }
 
+.editor.dense .gutter {
+  padding: 9px 8px 9px 14px;
+}
+
+.editor.dense .code {
+  padding: 9px 14px 9px 4px;
+}
+
 .editor.wrap textarea.input {
   white-space: pre-wrap;
   word-break: break-all;
@@ -1322,7 +1330,45 @@ textarea.input::placeholder {
   word-break: break-all;
 }
 
-/* ---------- หน้าเปรียบเทียบ ---------- */
+/* ---------- หน้าเปรียบเทียบ (mock 3a) ---------- */
+
+.compare-page {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+/* แถวอินพุตสูงคงที่ 154px — pane เตี้ยจึงใช้ Editor dense */
+.compare-inputs {
+  flex: none;
+  height: 154px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  border-bottom: 1px solid var(--border);
+}
+
+.compare-inputs > .pane {
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+
+.compare-inputs > .pane.source {
+  border-right: 1px solid var(--border);
+}
+
+.compare-inputs .pane-head {
+  padding: 8px 14px;
+  border-bottom-color: var(--border-soft);
+}
+
+.compare-page > .diff-panel {
+  flex: 1;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
 
 .compare {
   flex: 1;
