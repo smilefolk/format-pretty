@@ -25,7 +25,8 @@ import Formatter from './src/pages/Formatter'
 const noop = () => {}
 const html = renderToString(
   <Formatter input={'{"id":1}\n{"id":2}'} setInput={noop} indent="2" setIndent={noop}
-    sortKeys={false} setSortKeys={noop} view="code" setView={noop} notify={noop} />
+    sortKeys={false} setSortKeys={noop} mergeChunks={true} setMergeChunks={noop}
+    view="code" setView={noop} notify={noop} />
 )
 console.log(html.replace(/<!-- -->/g, '').includes('รวมเป็นอาร์เรย์เดียวให้แล้ว'))
 JSX
@@ -57,6 +58,8 @@ rm -f ./__check.jsx
 และอ่าน `result.merged` ไปแสดงแถบแจ้งเตือน
 
 ลำดับการทำงาน: ลอง `JSON.parse` ทั้งก้อนก่อน (ทางเร็ว) → ถ้าไม่ผ่านค่อยเรียก `scanDocuments()`
+ตัวเลือก `parseJson(text, { merge = true })` — `merge:false` แล้วพบหลายก้อนจะคืน error ชี้ต้นก้อนที่ 2 แทนการรวม
+(Formatter ส่ง `doc.mergeChunks`; Compare / `unwrap.js` / DocTabs ของ doc อื่นเรียกแบบ default)
 
 ### `src/lib/locate.js` — JSON scanner ที่เขียนเอง
 
@@ -99,8 +102,12 @@ label สองภาษาใช้ `<L th en />` จาก `src/lib/i18n.jsx` 
 
 ### คอมโพเนนต์ที่ใช้ร่วมกัน (`src/components/`)
 
-`Editor` (textarea + เลขบรรทัด + ไฮไลต์บรรทัดที่ผิด + drag & drop ไฟล์), `CodeView`
-(ระบายสีด้วย `tokenize()` จาก `json.js`), `JsonTree` (มุมมองพับ/ขยาย)
+`Editor` (textarea + เลขบรรทัด + ไฮไลต์บรรทัดที่ผิด + drag & drop ไฟล์; `ref.focusLine(n)`, prop `dense` / `wrap`),
+`CodeView` (ระบายสีด้วย `tokenize()` จาก `json.js`), `JsonTree` (มุมมองพับ/ขยาย), `ErrorCard` (การ์ด error
+ใต้ source pane: chip line:column + ปุ่มไปที่บรรทัด) — ตัวเลือก indent/view ที่ใช้ร่วมกันอยู่ใน `lib/constants.js`
+
+หน้าที่ redesign แล้ว (Formatter) เรนเดอร์ชิดขอบใน `.workbench`; หน้าที่ยังเป็นการ์ดแบบเดิม (Compare / Unwrap)
+ห่อด้วย `<div className="legacy-page">` ซึ่งถือ padding ไว้แทน `.shell-content` — ลบทิ้งเมื่อทุกหน้า redesign ครบ
 
 ## Conventions
 
