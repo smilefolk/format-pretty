@@ -71,7 +71,11 @@ NDJSON / อ็อบเจ็กต์ที่ต่อกันให้เ�
 ### ไลบรารีที่ต่อยอดจาก `parseJson`
 
 - `src/lib/diff.js` — เทียบ JSON สองก้อนแบบ recursive คืนรายการ `{ path, type, left, right }`
-  โดย `type` เป็น `added` / `removed` / `changed` / `type` — **อาร์เรย์จับคู่ตาม index ไม่ใช่ตามคีย์**
+  โดย `type` เป็น `added` / `removed` / `changed` / `type` (+ `equal` เฉพาะใบเมื่อ `includeEqual`)
+  `diffJson(a, b, { arrayKey, includeEqual })` — อาร์เรย์เทียบตาม index เป็นค่าเริ่มต้น; ส่ง `arrayKey`
+  เพื่อจับคู่ด้วยค่าคีย์ (path `$.items[id=7]` / `$.items[sku="X1"]`) อาร์เรย์ที่จับคู่ไม่ได้ fallback เป็น index
+  เฉพาะอาร์เรย์นั้น — `diffJsonWithMeta()` คืน `{ diffs, fallbacks }` ให้ UI แสดง notice;
+  `countKeys()` นับใบที่ตรงกัน/รวม สำหรับการ์ดสรุป; `summarize()` / `toReport()` ไม่นับ `equal`
 - `src/lib/unwrap.js` — แกะ JSON ที่ถูก escape เป็นสตริง ทีละชั้นสูงสุด 12 ชั้น รองรับทั้งแบบมีและ
   ไม่มีเครื่องหมายคำพูดครอบ ส่วน `unwrapNested()` แกะสตริง JSON ที่ซ่อนอยู่ในฟิลด์ย่อย
 
