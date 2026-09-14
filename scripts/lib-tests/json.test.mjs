@@ -1,12 +1,10 @@
 import assert from 'node:assert/strict'
-import { parseJson } from '../../.lib-tmp/json.js'
+import { suite } from './_harness.mjs'
+import { parseJson } from '../../src/lib/json.js'
+
+const { t, done } = suite('json.js')
 
 const ND = '{"id":1}\n{"id":2}\n{"id":3}'
-let n = 0
-const t = (name, fn) => {
-  fn()
-  n++
-}
 
 t('NDJSON merge on (default) → array 3 / merged 3', () => {
   const r = parseJson(ND)
@@ -61,4 +59,4 @@ t('unknown option object → default merge', () => {
   assert.equal(parseJson(ND, {}).ok, true)
   assert.equal(parseJson(ND, undefined).ok, true)
 })
-console.log(`json.js: ${n} cases passed`)
+done()

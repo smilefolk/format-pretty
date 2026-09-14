@@ -103,7 +103,7 @@ export default function Compare({
       <div className="compare-page">
         <div className="compare-inputs">
           <section className="pane source">
-            <PaneHead th="ก้อนซ้าย" en="Left" badge={sideBadge(leftResult)}>
+            <PaneHead id="left-head" th="ก้อนซ้าย" en="Left" badge={sideBadge(leftResult)}>
               <span className="pane-meta">
                 {left.split('\n').length} {t('บรรทัด', 'lines')}
               </span>
@@ -113,12 +113,13 @@ export default function Compare({
               value={left}
               onChange={setLeft}
               errorLine={leftResult.error?.line}
-              label={t('ก้อนซ้าย', 'Left')}
+              labelledBy="left-head"
+              invalid={!!leftResult.error}
               placeholder={'วาง JSON ก้อนแรกที่นี่\nหรือวางสองก้อนต่อกันในช่องนี้ช่องเดียว แล้วเว้นช่องขวาไว้'}
             />
           </section>
           <section className="pane">
-            <PaneHead th="ก้อนขวา" en="Right" badge={sideBadge(rightResult)}>
+            <PaneHead id="right-head" th="ก้อนขวา" en="Right" badge={sideBadge(rightResult)}>
               <button className="btn small" onClick={actions.swap}>
                 {t('สลับซ้าย–ขวา', 'Swap sides')}
               </button>
@@ -128,7 +129,8 @@ export default function Compare({
               value={right}
               onChange={setRight}
               errorLine={rightResult.error?.line}
-              label={t('ก้อนขวา', 'Right')}
+              labelledBy="right-head"
+              invalid={!!rightResult.error}
               placeholder="วาง JSON ก้อนที่สองที่นี่"
             />
           </section>

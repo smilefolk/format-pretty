@@ -1,17 +1,10 @@
 import assert from 'node:assert/strict'
-import { fixJson } from '../../.lib-tmp/fix.js'
-import { parseJson } from '../../.lib-tmp/json.js'
+import { suite } from './_harness.mjs'
+import { fixJson } from '../../src/lib/fix.js'
+import { parseJson } from '../../src/lib/json.js'
 
-let n = 0
-const t = (name, fn) => {
-  try {
-    fn()
-    n++
-  } catch (e) {
-    console.error('FAIL:', name)
-    throw e
-  }
-}
+const { t, done } = suite('fix.js')
+
 const ok = (text) => {
   const r = fixJson(text)
   assert.ok(r, 'expected a fix')
@@ -82,4 +75,4 @@ t('NDJSON with errors in each chunk is fixed chunk by chunk (merge stays on)', (
   assert.equal(r.fixed, `{"a":1}\n{"b":2}`)
   assert.deepEqual(r.applied, ['single-quote', 'trailing-comma'])
 })
-console.log(`fix.js: ${n} cases passed`)
+done()

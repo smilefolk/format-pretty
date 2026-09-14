@@ -1,16 +1,9 @@
 import assert from 'node:assert/strict'
-import { GROUPS, ON, listCommands, searchCommands } from '../../.lib-tmp/commands.js'
+import { suite } from './_harness.mjs'
+import { GROUPS, ON, listCommands, searchCommands } from '../../src/lib/commands.js'
 
-let n = 0
-const t = (name, fn) => {
-  try {
-    fn()
-    n++
-  } catch (e) {
-    console.error('FAIL:', name)
-    throw e
-  }
-}
+const { t, done } = suite('commands.js')
+
 const spy = () => {
   const f = (...a) => {
     f.calls.push(a)
@@ -227,4 +220,4 @@ t('all ids unique and every command has th/en/glyph/run', () => {
     for (const c of cmds) assert.ok(c.th && c.en && c.glyph && typeof c.run === 'function', c.id)
   }
 })
-console.log(`commands.js: ${n} cases passed`)
+done()
