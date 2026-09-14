@@ -77,7 +77,7 @@ label สองภาษาใช้ `<L th en />` และ `useT()` จาก 
 
 `App` ถือ `docs[]` + `activeId` ผ่าน `useDocs()` — หนึ่ง tab = เอกสารของเครื่องมือหนึ่ง (`doc.tool` เป็น
 `format` / `compare` / `unwrap`, D1) เนื้อหา (`input`, `left`/`right`) และตัวเลือกทั้งหมด (`indent`, `sortKeys`, `view`,
-`mergeChunks`, `deep`, `repeat`, `strategy`, `arrayKey`, `showEqual`) เป็นของแต่ละ doc (D8 — `indent`/`view` ไม่แชร์
+`mergeChunks`, `lineEnding`, `deep`, `repeat`, `strategy`, `arrayKey`, `showEqual`) เป็นของแต่ละ doc (D8 — `indent`/`view` ไม่แชร์
 ระหว่างเครื่องมือแล้ว) `App` ส่งลงหน้าเป็น props รูป `value` / `setValue` (setter = `update(doc.id, { key })`)
 หน้าจึงไม่เก็บ state ของอินพุต/ตัวเลือกเอง (state เฉพาะ UI เช่นตัวกรอง/คำค้นในหน้า Diff เก็บในหน้าได้)
 แต่ละหน้าถูก `key={doc.id}` ให้ได้ instance ใหม่ต่อ doc
@@ -156,7 +156,9 @@ result/output ที่หน้าถืออยู่ แล้วได้ o
 ### คอมโพเนนต์ที่ใช้ร่วมกัน (`src/components/`)
 
 - `Editor` — textarea + เลขบรรทัด (gutter `aria-hidden`) + ไฮไลต์บรรทัดที่ผิด + drag & drop ไฟล์ (กรอบ dashed ระหว่างลาก);
-  `ref.focusLine(n)` (ปุ่ม "ไปที่บรรทัด"), prop `dense` (Diff) / `wrap` (Unwrap) / `label` (aria-label — ต้องส่งเสมอ)
+  `ref.focusLine(n)` (ปุ่ม "ไปที่บรรทัด"), prop `dense` (Diff) / `wrap` (Unwrap) / `labelledBy` (id ของ PaneHead — ต้องส่งเสมอ) /
+  `invalid` / `onPasteText(text, replacesAll)` (ข้อความดิบก่อน textarea normalize `\r\n` — Formatter ใช้ตั้งธง `doc.lineEnding`
+  เฉพาะเมื่อวางทับทั้งหมด; ไฟล์ที่เปิดก็ตั้งธง; ดาวน์โหลดใช้ line ending ตามธง `withLineEnding()`)
 - `CodeView` (ระบายสีด้วย `tokenize()` จาก `json.js`), `JsonTree` (พับ/ขยาย, pill นับรายการตาม lang)
 - `ErrorCard` — การ์ด error แบบ 1b `{ title, message, line, column, onGoTo, onFix, children }` `role="alert"`;
   Formatter วางใต้ source pane, Unwrap วางในฝั่งผลลัพธ์พร้อม `<pre class="peeled">`

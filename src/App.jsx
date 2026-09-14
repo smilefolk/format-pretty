@@ -147,6 +147,8 @@ export default function App() {
               setMergeChunks={field('mergeChunks')}
               view={doc.view}
               setView={field('view')}
+              lineEnding={doc.lineEnding}
+              setLineEnding={field('lineEnding')}
               notify={notify}
               onFileName={onFileName}
             />

@@ -5,6 +5,8 @@ import { forwardRef, useImperativeHandle, useRef, useState } from 'react'
 // - dense: mono 11.5px/1.75 สำหรับ pane เตี้ย (หน้า Diff) · wrap: ตัดบรรทัดยาว (หน้า Unwrap)
 // - labelledBy: id ของ PaneHead ที่เป็นชื่อของ textarea (aria-labelledby) — ทุกหน้าต้องส่ง
 // - invalid: ทำเครื่องหมาย aria-invalid (ไม่ผูกกับ errorLine เพราะ error บางแบบไม่มีตำแหน่ง)
+// - onPasteText(text, replacesAll): ข้อความดิบจากคลิปบอร์ด (ยังมี \r\n) ก่อนที่ textarea จะ normalize —
+//   replacesAll = ช่องว่างหรือเลือกทั้งหมดอยู่ จึงถือว่าเป็นการ "นำเข้าใหม่" (ใช้ตั้งธง line ending)
 const Editor = forwardRef(function Editor(
   {
     value,
@@ -15,6 +17,7 @@ const Editor = forwardRef(function Editor(
     onKeyDown,
     labelledBy,
     invalid = false,
+    onPasteText,
     dense = false,
     wrap = false,
   },
@@ -57,6 +60,15 @@ const Editor = forwardRef(function Editor(
     dragDepth.current = Math.max(0, dragDepth.current - 1)
     if (dragDepth.current === 0) setDragging(false)
   }
+  const handlePaste = (e) => {
+    if (!onPasteText) return
+    const text = e.clipboardData?.getData('text/plain')
+    if (!text) return
+    const ta = e.currentTarget
+    const replacesAll = value === '' || (ta.selectionStart === 0 && ta.selectionEnd === value.length)
+    onPasteText(text, replacesAll)
+  }
+
   const handleDrop = (e) => {
     if (!onDropFile) return
     e.preventDefault()
@@ -93,6 +105,7 @@ const Editor = forwardRef(function Editor(
           if (gutterRef.current) gutterRef.current.scrollTop = e.target.scrollTop
         }}
         onKeyDown={onKeyDown}
+        onPaste={handlePaste}
         placeholder={placeholder}
         aria-labelledby={labelledBy}
         aria-invalid={invalid || undefined}

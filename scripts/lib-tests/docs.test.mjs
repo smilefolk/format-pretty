@@ -28,6 +28,7 @@ t('initial state: one blank doc of the tool, active, recent', () => {
   assert.equal(s.docs[0].indent, '2')
   assert.equal(s.docs[0].sortKeys, false)
   assert.equal(s.docs[0].mergeChunks, true)
+  assert.equal(s.docs[0].lineEnding, 'lf')
 })
 t('names: smallest unused number; unknown tool throws', () => {
   assert.equal(nextDocName([{ name: 'เอกสาร 1' }, { name: 'เอกสาร 3' }]), 'เอกสาร 2')
@@ -118,6 +119,13 @@ t('serialize / deserialize round-trip; tooLarge keeps metadata only; bad input �
   assert.equal(back.docs[0].input, '{"a":1}')
   assert.equal(back.docs[1].tool, 'unwrap')
   assert.equal(deserializeDocs('not json'), null)
+  // doc เก่าที่ยังไม่มีธง lineEnding → default 'lf'
+  const legacy = JSON.stringify({
+    version: 1,
+    activeDocId: 'x',
+    docs: [{ id: 'x', tool: 'format', name: 'เอกสาร 1' }],
+  })
+  assert.equal(deserializeDocs(legacy).docs[0].lineEnding, 'lf')
   assert.equal(deserializeDocs('{"version":99}'), null)
   // ธง tooLarge ไม่ค้าง: เนื้อหาเล็กลงแล้ว serialize ใหม่ต้องเก็บจริง
   const shrunk = r(back, { type: 'update', id: big.id, patch: { input: 'small' } })

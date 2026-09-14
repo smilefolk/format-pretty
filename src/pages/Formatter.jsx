@@ -11,7 +11,14 @@ import useFilePicker from '../hooks/useFilePicker'
 import { INDENT_OPTIONS, VIEW_OPTIONS } from '../lib/constants'
 import { fixJson } from '../lib/fix'
 import { useT } from '../lib/i18n'
-import { formatBytes, getStats, parseJson, sortKeysDeep, stringify } from '../lib/json'
+import {
+  formatBytes,
+  getStats,
+  lineEndingOf,
+  parseJson,
+  sortKeysDeep,
+  stringify,
+} from '../lib/json'
 
 // ไม่ลอง auto-fix กับอินพุตที่ใหญ่กว่านี้ (ไบต์โดยประมาณ) กันหน้าหน่วงตอนพิมพ์
 const FIX_LIMIT = 256 * 1024
@@ -27,6 +34,8 @@ export default function Formatter({
   setMergeChunks,
   view,
   setView,
+  lineEnding,
+  setLineEnding,
   notify,
   onFileName,
 }) {
@@ -46,12 +55,16 @@ export default function Formatter({
   )
 
   const output = useMemo(() => (result.ok ? stringify(value, indent) : ''), [result.ok, value, indent])
-  const lineEnding = input.includes('\r\n') ? 'CRLF' : 'LF'
   const stats = useMemo(() => (result.ok ? getStats(value, output) : null), [result.ok, value, output])
 
+  // นำเข้า (ไฟล์ / วางทับทั้งหมด) = จุดเดียวที่ตั้งธง line ending; พิมพ์เพิ่มไม่เปลี่ยน
   const loadText = (text, name) => {
     setInput(text)
+    setLineEnding(lineEndingOf(text))
     onFileName?.(name)
+  }
+  const onPasteText = (text, replacesAll) => {
+    if (replacesAll) setLineEnding(lineEndingOf(text))
   }
   const readFile = (file) => readTextFile(file, loadText, notify)
   const picker = useFilePicker(readFile)
@@ -64,6 +77,7 @@ export default function Formatter({
     setInput,
     notify,
     openFile: picker.open,
+    lineEnding,
   })
   usePublishActions(actions)
 
@@ -90,6 +104,7 @@ export default function Formatter({
             errorLine={result.error?.line}
             onDropFile={readFile}
             onKeyDown={onKeyDown}
+            onPasteText={onPasteText}
             labelledBy="source-head"
             invalid={!!result.error}
             placeholder={
@@ -227,7 +242,7 @@ export default function Formatter({
         )}
         {result.merged > 1 && <span>MERGED ×{result.merged}</span>}
         <span>UTF-8</span>
-        <span>{lineEnding}</span>
+        <span>{lineEnding === 'crlf' ? 'CRLF' : 'LF'}</span>
         <span>JSON</span>
       </StatusSlot>
     </>
