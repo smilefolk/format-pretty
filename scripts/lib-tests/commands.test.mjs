@@ -81,9 +81,20 @@ t('when: compare shows swap/copy-report/strategy/show-equal, hides format-only',
     'sample',
     'clear',
     'new-doc',
+    'open-file-left',
+    'open-file-right',
   ])
     assert.ok(c.includes(id), id)
-  for (const id of ['format', 'minify', 'indent-2', 'sort-keys', 'view-code', 'copy', 'deep'])
+  for (const id of [
+    'format',
+    'minify',
+    'indent-2',
+    'sort-keys',
+    'view-code',
+    'copy',
+    'deep',
+    'open-file',
+  ])
     assert.ok(!c.includes(id), id)
 })
 t('when: unwrap shows unwrap/send/deep/repeat/indent/view/samples', () => {
@@ -99,9 +110,17 @@ t('when: unwrap shows unwrap/send/deep/repeat/indent/view/samples', () => {
     'sample-nested',
     'copy',
     'download',
+    'open-file',
   ])
     assert.ok(c.includes(id), id)
-  for (const id of ['format', 'sort-keys', 'merge-chunks', 'swap', 'sample-multi', 'open-file'])
+  for (const id of [
+    'format',
+    'sort-keys',
+    'merge-chunks',
+    'swap',
+    'sample-multi',
+    'open-file-left',
+  ])
     assert.ok(!c.includes(id), id)
 })
 t('state: เปิดอยู่ for current indent/view/toggles/tool/theme/lang', () => {

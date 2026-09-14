@@ -109,7 +109,10 @@ result/output ที่หน้าถืออยู่ แล้วได้ o
 `usePublishActions(actions)` ลงทะเบียนเข้า `ActionsContext` (ref ที่ `App` ถือ ไม่ re-render) — ⌘K
 (`components/CommandPalette.jsx`) เรียก `listCommands(ctx)` จาก `lib/commands.js` ซึ่ง `run(ctx)` ไปเรียก
 `ctx.actions.<ชื่อ>` **ตัวเดียวกับปุ่ม** จึงไม่มี logic ซ้ำสองที่ helper ร่วม (`copyText`, `downloadText`,
-`readTextFile`) ก็อยู่ในไฟล์นี้
+`readTextFile(file, onText(text, fileName), notify)`) ก็อยู่ในไฟล์นี้; `<input type="file">` ที่ซ่อนอยู่มาจาก
+`hooks/useFilePicker.jsx` (`{ open, input }`) — Formatter/Unwrap มีปุ่มเปิดไฟล์ + ⌘K, Compare มีแค่ลากวาง + ⌘K
+(ซ้าย/ขวา) ตาม mock; ไฟล์ที่เปิดลง doc ที่ยังชื่อ "เอกสาร n" จะตั้งชื่อ tab ตามไฟล์ (`App.onFileName` →
+`isDefaultName` ใน `lib/docs.js`; reducer `rename` กันชื่อซ้ำด้วย ` (2)`)
 
 คำสั่ง = `{ id, th, en, group, glyph, keys?, when?(ctx), run(ctx), state?(ctx) → 'เปิดอยู่' | null }` กลุ่ม
 เอกสาร / ตั้งค่า / เครื่องมือ / ทั่วไป; `when` ซ่อนตามเครื่องมือ (เช่น `fix` โชว์เฉพาะเมื่อ `actions.fix` มีค่า);
