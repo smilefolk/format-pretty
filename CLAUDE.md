@@ -118,7 +118,10 @@ result/output ที่หน้าถืออยู่ แล้วได้ o
 เอกสาร / ตั้งค่า / เครื่องมือ / ทั่วไป; `when` ซ่อนตามเครื่องมือ (เช่น `fix` โชว์เฉพาะเมื่อ `actions.fix` มีค่า);
 คำสั่งสลับเอกสารสร้าง dynamic จาก `docs`; `ctx` สร้างใน `App` (`commandCtx`: doc, docs, actions (getter อ่าน ref สด
 เพราะหน้าลงทะเบียนหลัง App render), set, openTool, newDoc, closeDoc, activateDoc, theme, toggleTheme, lang, setLang)
-`searchCommands()` ค้นทั้ง th/en แบบ substring เรียงตามตำแหน่งที่พบ ตัวอย่างข้อมูลทุกหน้าอยู่ `lib/samples.js`
+`rankCommands(commands, q, { lang, recent })` ให้คะแนน ขึ้นต้นข้อความ 3 / ขึ้นต้นคำ 2 (ขอบเขตคำไทยจาก `Intl.Segmenter`) /
+กลางคำ 1 → `{ primary, related }` (palette แสดง primary ในกลุ่มเดิม, related ในกลุ่ม "คำสั่งที่ใกล้เคียง"); เสมอกันเรียงตาม
+น้ำหนักกลุ่มแล้วคำสั่งที่เพิ่งใช้ (MRU `localStorage['fp-recent-commands']` ≤ 6 — โชว์เป็นกลุ่ม "ล่าสุด" เมื่อยังไม่พิมพ์)
+ตัวอย่างข้อมูลทุกหน้าอยู่ `lib/samples.js`
 (D4: ตัวอย่างเรียกจาก ⌘K; หน้า Unwrap มีปุ่มสลับตัวอย่างด้วยตาม mock)
 
 ### ไลบรารี (`src/lib/`)
