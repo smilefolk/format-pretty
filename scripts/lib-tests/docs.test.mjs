@@ -9,9 +9,11 @@ import {
   deserializeDocs,
   docsReducer,
   initialDocsState,
+  isDefaultName,
   latestDocForTool,
   nextDocName,
   serializeDocs,
+  uniqueName,
 } from '../../src/lib/docs.js'
 
 const r = docsReducer
@@ -70,6 +72,25 @@ t('close active → next to the right, else left', () => {
   assert.equal(s.activeId, c.id)
   s = r(s, { type: 'close', id: c.id })
   assert.equal(s.activeId, s.docs[0].id)
+})
+t('ชื่อ default / ชื่อไม่ซ้ำตอน rename (เปิดไฟล์ชื่อเดียวกันสองครั้ง → orders.json (2))', () => {
+  assert.equal(isDefaultName('เอกสาร 1'), true)
+  assert.equal(isDefaultName('เอกสาร 12'), true)
+  assert.equal(isDefaultName('orders.json'), false)
+  assert.equal(isDefaultName('เอกสาร x'), false)
+  let s = initialDocsState('format')
+  const b = createDoc('format', {}, s.docs)
+  s = r(s, { type: 'open', doc: b })
+  s = r(s, { type: 'rename', id: s.docs[0].id, name: 'orders.json' })
+  s = r(s, { type: 'rename', id: b.id, name: 'orders.json' })
+  assert.deepEqual(
+    s.docs.map((d) => d.name),
+    ['orders.json', 'orders.json (2)']
+  )
+  // rename เป็นชื่อเดิมของตัวเองไม่ต่อท้าย
+  s = r(s, { type: 'rename', id: b.id, name: 'orders.json (2)' })
+  assert.equal(s.docs[1].name, 'orders.json (2)')
+  assert.equal(uniqueName(s.docs, 'orders.json'), 'orders.json (3)')
 })
 t('latestDocForTool follows MRU', () => {
   let s = initialDocsState('format')

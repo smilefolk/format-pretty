@@ -7,6 +7,7 @@ import OptionsPanel, { OptionGroup } from '../components/shell/OptionsPanel'
 import { OptionsSlot, StatusSlot } from '../components/shell/slots'
 import { Badge, KeyCap, PaneHead, Segmented, StatGrid, Toggle } from '../components/ui'
 import { readTextFile, usePublishActions, useUnwrapActions } from '../hooks/useActions'
+import useFilePicker from '../hooks/useFilePicker'
 import { INDENT_OPTIONS, VIEW_OPTIONS } from '../lib/constants'
 import { useLang, useT } from '../lib/i18n'
 import { formatBytes, getStats, stringify } from '../lib/json'
@@ -37,6 +38,7 @@ export default function Unwrap({
   setRepeat,
   notify,
   sendToFormatter,
+  onFileName,
 }) {
   const t = useT()
   const lang = useLang()
@@ -65,6 +67,13 @@ export default function Unwrap({
 
   const stats = useMemo(() => (result.ok ? getStats(nested.value, output) : null), [result.ok, nested.value, output])
 
+  const loadText = (text, name) => {
+    setInput(text)
+    onFileName?.(name)
+  }
+  const readFile = (file) => readTextFile(file, loadText, notify)
+  const picker = useFilePicker(readFile)
+
   const actions = useUnwrapActions({
     input,
     result,
@@ -73,6 +82,7 @@ export default function Unwrap({
     setInput,
     notify,
     sendToFormatter,
+    openFile: picker.open,
   })
   usePublishActions(actions)
 
@@ -82,8 +92,6 @@ export default function Unwrap({
       actions.unwrap()
     }
   }
-
-  const readFile = (file) => readTextFile(file, setInput, notify)
 
   return (
     <>
@@ -139,6 +147,9 @@ export default function Unwrap({
               <KeyCap variant="primary">⌘↵</KeyCap>
             </button>
             <div className="spacer" />
+            <button className="btn ghost" onClick={actions.openFile}>
+              {t('เปิดไฟล์', 'Open file')}
+            </button>
             <button
               className="btn ghost"
               onClick={actions.sample}
@@ -149,6 +160,7 @@ export default function Unwrap({
             <button className="btn ghost" onClick={actions.clear}>
               {t('ล้าง', 'Clear')}
             </button>
+            {picker.input}
           </div>
         </section>
 

@@ -7,6 +7,7 @@ import OptionsPanel, { OptionGroup } from '../components/shell/OptionsPanel'
 import { OptionsSlot, StatusSlot } from '../components/shell/slots'
 import { Badge, KeyCap, PaneHead, Segmented, StatGrid, Toggle } from '../components/ui'
 import { readTextFile, useFormatterActions, usePublishActions } from '../hooks/useActions'
+import useFilePicker from '../hooks/useFilePicker'
 import { INDENT_OPTIONS, VIEW_OPTIONS } from '../lib/constants'
 import { fixJson } from '../lib/fix'
 import { useT } from '../lib/i18n'
@@ -27,9 +28,9 @@ export default function Formatter({
   view,
   setView,
   notify,
+  onFileName,
 }) {
   const t = useT()
-  const fileRef = useRef(null)
   const editorRef = useRef(null)
 
   const result = useMemo(() => parseJson(input, { merge: mergeChunks }), [input, mergeChunks])
@@ -48,10 +49,23 @@ export default function Formatter({
   const lineEnding = input.includes('\r\n') ? 'CRLF' : 'LF'
   const stats = useMemo(() => (result.ok ? getStats(value, output) : null), [result.ok, value, output])
 
-  const actions = useFormatterActions({ result, output, value, fix, setInput, notify, fileRef })
-  usePublishActions(actions)
+  const loadText = (text, name) => {
+    setInput(text)
+    onFileName?.(name)
+  }
+  const readFile = (file) => readTextFile(file, loadText, notify)
+  const picker = useFilePicker(readFile)
 
-  const readFile = (file) => readTextFile(file, setInput, notify)
+  const actions = useFormatterActions({
+    result,
+    output,
+    value,
+    fix,
+    setInput,
+    notify,
+    openFile: picker.open,
+  })
+  usePublishActions(actions)
 
   const onKeyDown = (e) => {
     if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
@@ -108,16 +122,7 @@ export default function Formatter({
             <button className="btn ghost" onClick={actions.clear}>
               {t('ล้าง', 'Clear')}
             </button>
-            <input
-              ref={fileRef}
-              type="file"
-              accept=".json,.txt,application/json"
-              hidden
-              onChange={(e) => {
-                readFile(e.target.files?.[0])
-                e.target.value = ''
-              }}
-            />
+            {picker.input}
           </div>
         </section>
 

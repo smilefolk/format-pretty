@@ -35,11 +35,12 @@ export function downloadText(text, filename) {
   URL.revokeObjectURL(url)
 }
 
+// onText(text, fileName) — หน้าใช้ fileName ตั้งชื่อ tab (App.onFileName) ถ้า doc ยังชื่อ "เอกสาร n"
 export function readTextFile(file, onText, notify) {
   if (!file) return
   const reader = new FileReader()
   reader.onload = () => {
-    onText(String(reader.result))
+    onText(String(reader.result), file.name)
     notify(`โหลดไฟล์ ${file.name} แล้ว`)
   }
   reader.readAsText(file)
@@ -62,7 +63,7 @@ export function usePublishActions(actions) {
 
 // ---- Formatter ----------------------------------------------------------------
 
-export function useFormatterActions({ result, output, value, fix, setInput, notify, fileRef }) {
+export function useFormatterActions({ result, output, value, fix, setInput, notify, openFile }) {
   return useMemo(
     () => ({
       format() {
@@ -83,9 +84,7 @@ export function useFormatterActions({ result, output, value, fix, setInput, noti
         if (!output) return notify('ยังไม่มีผลลัพธ์ให้ดาวน์โหลด')
         downloadText(output, 'formatted.json')
       },
-      openFile() {
-        fileRef.current?.click()
-      },
+      openFile,
       clear() {
         setInput('')
       },
@@ -103,7 +102,7 @@ export function useFormatterActions({ result, output, value, fix, setInput, noti
         setInput(SAMPLE_FORMAT_MULTI)
       },
     }),
-    [result.ok, output, value, fix, setInput, notify, fileRef]
+    [result.ok, output, value, fix, setInput, notify, openFile]
   )
 }
 
@@ -118,9 +117,13 @@ export function useCompareActions({
   diffs,
   toReport,
   notify,
+  openFileLeft,
+  openFileRight,
 }) {
   return useMemo(
     () => ({
+      openFileLeft,
+      openFileRight,
       swap() {
         setLeft(right)
         setRight(left)
@@ -141,7 +144,7 @@ export function useCompareActions({
         setRight('')
       },
     }),
-    [left, right, setLeft, setRight, ready, diffs, toReport, notify]
+    [left, right, setLeft, setRight, ready, diffs, toReport, notify, openFileLeft, openFileRight]
   )
 }
 
@@ -155,9 +158,11 @@ export function useUnwrapActions({
   setInput,
   notify,
   sendToFormatter,
+  openFile,
 }) {
   return useMemo(
     () => ({
+      openFile,
       // D5(a): แกะแล้วเขียนผลทับช่องซ้าย
       unwrap() {
         if (!result.ok) return notify(result.empty ? 'ยังไม่มีข้อมูลให้แกะ' : 'แกะเป็น JSON ไม่ได้')
@@ -191,6 +196,6 @@ export function useUnwrapActions({
         setInput(SAMPLE_UNWRAP_NESTED)
       },
     }),
-    [input, result.ok, result.empty, output, layers, setInput, notify, sendToFormatter]
+    [input, result.ok, result.empty, output, layers, setInput, notify, sendToFormatter, openFile]
   )
 }
