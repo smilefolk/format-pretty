@@ -34,6 +34,8 @@ export const DOC_DEFAULTS = Object.freeze({
   view: 'code',
   // Formatter
   mergeChunks: true,
+  // line ending ของข้อความที่นำเข้าล่าสุด (ไฟล์/วางทับทั้งหมด) — 'lf' | 'crlf'; ดู lineEndingOf ใน lib/json.js
+  lineEnding: 'lf',
   // Unwrap
   deep: true,
   repeat: false,

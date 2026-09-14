@@ -6,6 +6,7 @@
 //   palette อ่านตอนสั่งงานผ่าน ctx.actions
 
 import { createContext, useContext, useEffect, useMemo } from 'react'
+import { withLineEnding } from '../lib/json'
 import {
   SAMPLE_DIFF_LEFT,
   SAMPLE_DIFF_RIGHT,
@@ -63,7 +64,16 @@ export function usePublishActions(actions) {
 
 // ---- Formatter ----------------------------------------------------------------
 
-export function useFormatterActions({ result, output, value, fix, setInput, notify, openFile }) {
+export function useFormatterActions({
+  result,
+  output,
+  value,
+  fix,
+  setInput,
+  notify,
+  openFile,
+  lineEnding = 'lf',
+}) {
   return useMemo(
     () => ({
       format() {
@@ -82,7 +92,8 @@ export function useFormatterActions({ result, output, value, fix, setInput, noti
       },
       download() {
         if (!output) return notify('ยังไม่มีผลลัพธ์ให้ดาวน์โหลด')
-        downloadText(output, 'formatted.json')
+        // ไฟล์ที่ดาวน์โหลดใช้ line ending เดียวกับต้นทาง (คัดลอกยังเป็น LF — คลิปบอร์ดปลายทาง normalize เอง)
+        downloadText(withLineEnding(output, lineEnding), 'formatted.json')
       },
       openFile,
       clear() {
@@ -102,7 +113,7 @@ export function useFormatterActions({ result, output, value, fix, setInput, noti
         setInput(SAMPLE_FORMAT_MULTI)
       },
     }),
-    [result.ok, output, value, fix, setInput, notify, openFile]
+    [result.ok, output, value, fix, setInput, notify, openFile, lineEnding]
   )
 }
 
