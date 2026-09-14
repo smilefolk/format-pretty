@@ -3,8 +3,19 @@ import { forwardRef, useImperativeHandle, useRef, useState } from 'react'
 // ช่องแก้ไขข้อความพร้อมเลขบรรทัด และไฮไลต์บรรทัดที่ผิดพลาด
 // - ref.focusLine(n): focus + วาง caret ต้นบรรทัด n + เลื่อนให้เห็น (ปุ่ม "ไปที่บรรทัด" ในการ์ด error)
 // - dense: mono 11.5px/1.75 สำหรับ pane เตี้ย (หน้า Diff) · wrap: ตัดบรรทัดยาว (หน้า Unwrap)
+// - label: aria-label ของ textarea (PaneHead ไม่ใช่ <label>) — ทุกหน้าต้องส่ง
 const Editor = forwardRef(function Editor(
-  { value, onChange, errorLine, placeholder, onDropFile, onKeyDown, dense = false, wrap = false },
+  {
+    value,
+    onChange,
+    errorLine,
+    placeholder,
+    onDropFile,
+    onKeyDown,
+    label,
+    dense = false,
+    wrap = false,
+  },
   ref
 ) {
   const gutterRef = useRef(null)
@@ -81,6 +92,8 @@ const Editor = forwardRef(function Editor(
         }}
         onKeyDown={onKeyDown}
         placeholder={placeholder}
+        aria-label={label}
+        aria-invalid={errorLine ? true : undefined}
         spellCheck={false}
       />
     </div>
