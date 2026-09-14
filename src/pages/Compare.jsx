@@ -3,7 +3,8 @@ import Editor from '../components/Editor'
 import OptionsPanel, { OptionGroup } from '../components/shell/OptionsPanel'
 import { OptionsSlot, StatusSlot } from '../components/shell/slots'
 import { Badge, PaneHead, Segmented, Toggle } from '../components/ui'
-import { useCompareActions, usePublishActions } from '../hooks/useActions'
+import { readTextFile, useCompareActions, usePublishActions } from '../hooks/useActions'
+import useFilePicker from '../hooks/useFilePicker'
 import { countKeys, diffJsonWithMeta, preview, summarize, toReport, typeLabel } from '../lib/diff'
 import { useT } from '../lib/i18n'
 import { parseJson } from '../lib/json'
@@ -30,6 +31,7 @@ export default function Compare({
   showEqual,
   setShowEqual,
   notify,
+  onFileName,
 }) {
   const t = useT()
   const [filter, setFilter] = useState('all')
@@ -75,6 +77,21 @@ export default function Compare({
       (!needle || d.path.toLowerCase().includes(needle))
   )
 
+  // เปิดไฟล์ลงฝั่งซ้าย/ขวา (ลากวางหรือ ⌘K — header ไม่มีปุ่มตาม mock 3a)
+  const loadSide = (setSide) => (file) =>
+    readTextFile(
+      file,
+      (text, name) => {
+        setSide(text)
+        onFileName?.(name)
+      },
+      notify
+    )
+  const readLeft = loadSide(setLeft)
+  const readRight = loadSide(setRight)
+  const pickerLeft = useFilePicker(readLeft)
+  const pickerRight = useFilePicker(readRight)
+
   const actions = useCompareActions({
     left,
     right,
@@ -84,6 +101,8 @@ export default function Compare({
     diffs,
     toReport,
     notify,
+    openFileLeft: pickerLeft.open,
+    openFileRight: pickerRight.open,
   })
   usePublishActions(actions)
 
@@ -113,6 +132,7 @@ export default function Compare({
               value={left}
               onChange={setLeft}
               errorLine={leftResult.error?.line}
+              onDropFile={readLeft}
               labelledBy="left-head"
               invalid={!!leftResult.error}
               placeholder={'วาง JSON ก้อนแรกที่นี่\nหรือวางสองก้อนต่อกันในช่องนี้ช่องเดียว แล้วเว้นช่องขวาไว้'}
@@ -129,12 +149,15 @@ export default function Compare({
               value={right}
               onChange={setRight}
               errorLine={rightResult.error?.line}
+              onDropFile={readRight}
               labelledBy="right-head"
               invalid={!!rightResult.error}
               placeholder="วาง JSON ก้อนที่สองที่นี่"
             />
           </section>
         </div>
+        {pickerLeft.input}
+        {pickerRight.input}
 
         <section className="pane diff-panel">
           <PaneHead

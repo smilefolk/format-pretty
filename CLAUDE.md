@@ -109,13 +109,19 @@ result/output ที่หน้าถืออยู่ แล้วได้ o
 `usePublishActions(actions)` ลงทะเบียนเข้า `ActionsContext` (ref ที่ `App` ถือ ไม่ re-render) — ⌘K
 (`components/CommandPalette.jsx`) เรียก `listCommands(ctx)` จาก `lib/commands.js` ซึ่ง `run(ctx)` ไปเรียก
 `ctx.actions.<ชื่อ>` **ตัวเดียวกับปุ่ม** จึงไม่มี logic ซ้ำสองที่ helper ร่วม (`copyText`, `downloadText`,
-`readTextFile`) ก็อยู่ในไฟล์นี้
+`readTextFile(file, onText(text, fileName), notify)`) ก็อยู่ในไฟล์นี้; `<input type="file">` ที่ซ่อนอยู่มาจาก
+`hooks/useFilePicker.jsx` (`{ open, input }`) — Formatter/Unwrap มีปุ่มเปิดไฟล์ + ⌘K, Compare มีแค่ลากวาง + ⌘K
+(ซ้าย/ขวา) ตาม mock; ไฟล์ที่เปิดลง doc ที่ยังชื่อ "เอกสาร n" จะตั้งชื่อ tab ตามไฟล์ (`App.onFileName` →
+`isDefaultName` ใน `lib/docs.js`; reducer `rename` กันชื่อซ้ำด้วย ` (2)`)
 
 คำสั่ง = `{ id, th, en, group, glyph, keys?, when?(ctx), run(ctx), state?(ctx) → 'เปิดอยู่' | null }` กลุ่ม
 เอกสาร / ตั้งค่า / เครื่องมือ / ทั่วไป; `when` ซ่อนตามเครื่องมือ (เช่น `fix` โชว์เฉพาะเมื่อ `actions.fix` มีค่า);
 คำสั่งสลับเอกสารสร้าง dynamic จาก `docs`; `ctx` สร้างใน `App` (`commandCtx`: doc, docs, actions (getter อ่าน ref สด
 เพราะหน้าลงทะเบียนหลัง App render), set, openTool, newDoc, closeDoc, activateDoc, theme, toggleTheme, lang, setLang)
-`searchCommands()` ค้นทั้ง th/en แบบ substring เรียงตามตำแหน่งที่พบ ตัวอย่างข้อมูลทุกหน้าอยู่ `lib/samples.js`
+`rankCommands(commands, q, { lang, recent })` ให้คะแนน ขึ้นต้นข้อความ 3 / ขึ้นต้นคำ 2 (ขอบเขตคำไทยจาก `Intl.Segmenter`) /
+กลางคำ 1 → `{ primary, related }` (palette แสดง primary ในกลุ่มเดิม, related ในกลุ่ม "คำสั่งที่ใกล้เคียง"); เสมอกันเรียงตาม
+น้ำหนักกลุ่มแล้วคำสั่งที่เพิ่งใช้ (MRU `localStorage['fp-recent-commands']` ≤ 6 — โชว์เป็นกลุ่ม "ล่าสุด" เมื่อยังไม่พิมพ์)
+ตัวอย่างข้อมูลทุกหน้าอยู่ `lib/samples.js`
 (D4: ตัวอย่างเรียกจาก ⌘K; หน้า Unwrap มีปุ่มสลับตัวอย่างด้วยตาม mock)
 
 ### ไลบรารี (`src/lib/`)
@@ -154,7 +160,9 @@ result/output ที่หน้าถืออยู่ แล้วได้ o
 ### คอมโพเนนต์ที่ใช้ร่วมกัน (`src/components/`)
 
 - `Editor` — textarea + เลขบรรทัด (gutter `aria-hidden`) + ไฮไลต์บรรทัดที่ผิด + drag & drop ไฟล์ (กรอบ dashed ระหว่างลาก);
-  `ref.focusLine(n)` (ปุ่ม "ไปที่บรรทัด"), prop `dense` (Diff) / `wrap` (Unwrap) / `label` (aria-label — ต้องส่งเสมอ)
+  `ref.focusLine(n)` (ปุ่ม "ไปที่บรรทัด"), prop `dense` (Diff) / `wrap` (Unwrap) / `labelledBy` (id ของ PaneHead — ต้องส่งเสมอ) /
+  `invalid` / `onPasteText(text, replacesAll)` (ข้อความดิบก่อน textarea normalize `\r\n` — Formatter ใช้ตั้งธง `doc.lineEnding`
+  เฉพาะเมื่อวางทับทั้งหมด; ไฟล์ที่เปิดก็ตั้งธง; ดาวน์โหลดใช้ line ending ตามธง `withLineEnding()`)
 - `CodeView` (ระบายสีด้วย `tokenize()` จาก `json.js`), `JsonTree` (พับ/ขยาย, pill นับรายการตาม lang)
 - `ErrorCard` — การ์ด error แบบ 1b `{ title, message, line, column, onGoTo, onFix, children }` `role="alert"`;
   Formatter วางใต้ source pane, Unwrap วางในฝั่งผลลัพธ์พร้อม `<pre class="peeled">`

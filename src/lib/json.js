@@ -89,6 +89,14 @@ export function getStats(value, text) {
   }
 }
 
+// line ending ของข้อความที่นำเข้า — เก็บเป็นธงใน doc (lib/docs.js) เพราะ <textarea> normalize \r\n เป็น \n
+// ตั้งแต่ตอนวาง จึงตรวจจาก input ทีหลังไม่ได้
+export const lineEndingOf = (text) => (text.includes('\r\n') ? 'crlf' : 'lf')
+
+// แปลงข้อความออก (ดาวน์โหลด) ให้ตรงกับ line ending ต้นทาง
+export const withLineEnding = (text, ending) =>
+  ending === 'crlf' ? text.replace(/\r?\n/g, '\r\n') : text
+
 export function formatBytes(bytes) {
   if (bytes < 1024) return `${bytes} B`
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`

@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { suite } from './_harness.mjs'
-import { parseJson } from '../../src/lib/json.js'
+import { lineEndingOf, parseJson, withLineEnding } from '../../src/lib/json.js'
 
 const { t, done } = suite('json.js')
 
@@ -58,5 +58,13 @@ t('two chunks where 2nd is broken → real error wins over "more than one" (both
 t('unknown option object → default merge', () => {
   assert.equal(parseJson(ND, {}).ok, true)
   assert.equal(parseJson(ND, undefined).ok, true)
+})
+t('lineEndingOf / withLineEnding', () => {
+  assert.equal(lineEndingOf('a\r\nb'), 'crlf')
+  assert.equal(lineEndingOf('a\nb'), 'lf')
+  assert.equal(lineEndingOf(''), 'lf')
+  assert.equal(withLineEnding('a\nb\n', 'crlf'), 'a\r\nb\r\n')
+  assert.equal(withLineEnding('a\r\nb', 'crlf'), 'a\r\nb') // ไม่ซ้อน \r
+  assert.equal(withLineEnding('a\nb', 'lf'), 'a\nb')
 })
 done()
