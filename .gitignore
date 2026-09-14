@@ -10,3 +10,4 @@ dist-ssr
 .idea/
 npm-debug.log*
 yarn-error.log*
+.lib-tmp
