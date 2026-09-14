@@ -7,6 +7,7 @@ import AppShell from './components/shell/AppShell'
 import DocTabs from './components/shell/DocTabs'
 import { ActionsContext } from './hooks/useActions'
 import useDocs from './hooks/useDocs'
+import { isDefaultName } from './lib/docs'
 import { LangContext, readLang, writeLang } from './lib/i18n'
 
 // อ่านธีมแบบไม่พัง — SSR / private mode อาจไม่มี localStorage
@@ -75,6 +76,11 @@ export default function App() {
     setLang,
   }
 
+  // เปิด/ลากไฟล์ลง doc ที่ยังชื่อ "เอกสาร n" → ตั้งชื่อ tab ตามไฟล์ (ผู้ใช้ตั้งชื่อเองแล้วไม่ทับ)
+  const onFileName = (name) => {
+    if (isDefaultName(doc.name)) rename(doc.id, name)
+  }
+
   const sendToFormatter = (text) => {
     open('format', { name: 'จาก unwrap', input: text })
     notify('ส่งผลลัพธ์ไปหน้าจัดรูปแบบแล้ว')
@@ -141,7 +147,10 @@ export default function App() {
               setMergeChunks={field('mergeChunks')}
               view={doc.view}
               setView={field('view')}
+              lineEnding={doc.lineEnding}
+              setLineEnding={field('lineEnding')}
               notify={notify}
+              onFileName={onFileName}
             />
           )}
 
@@ -159,6 +168,7 @@ export default function App() {
               showEqual={doc.showEqual}
               setShowEqual={field('showEqual')}
               notify={notify}
+              onFileName={onFileName}
             />
           )}
 
@@ -173,10 +183,9 @@ export default function App() {
               setView={field('view')}
               deep={doc.deep}
               setDeep={field('deep')}
-              repeat={doc.repeat}
-              setRepeat={field('repeat')}
               notify={notify}
               sendToFormatter={sendToFormatter}
+              onFileName={onFileName}
             />
           )}
 

@@ -26,6 +26,7 @@ const Editor = forwardRef(function Editor(
     onKeyDown,
     labelledBy,
     invalid = false,
+    onPasteText,
     dense = false,
     wrap = false,
   },
@@ -78,6 +79,15 @@ const Editor = forwardRef(function Editor(
     dragDepth.current = Math.max(0, dragDepth.current - 1)
     if (dragDepth.current === 0) setDragging(false)
   }
+  const handlePaste = (e) => {
+    if (!onPasteText) return
+    const text = e.clipboardData?.getData('text/plain')
+    if (!text) return
+    const ta = e.currentTarget
+    const replacesAll = value === '' || (ta.selectionStart === 0 && ta.selectionEnd === value.length)
+    onPasteText(text, replacesAll)
+  }
+
   const handleDrop = (e) => {
     if (!onDropFile) return
     e.preventDefault()

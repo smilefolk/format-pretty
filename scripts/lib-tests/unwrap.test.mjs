@@ -47,7 +47,7 @@ t('5. unwrapJson backward compatible: ok/value/layers/merged + peels', () => {
 t('2. SAMPLE (quoted) → peels 1 layer where string', () => {
   assert.deepEqual(unwrapJson(SAMPLE).peels, [{ n: 1, where: 'string' }])
 })
-t('1. SAMPLE_NESTED → fields payload, payload.customer; count 2; passes 1', () => {
+t('1. SAMPLE_NESTED → fields payload, payload.customer; count 2', () => {
   const outer = unwrapJson(SAMPLE_NESTED)
   assert.equal(outer.layers, 0)
   const r = unwrapNested(outer.value)
@@ -56,7 +56,6 @@ t('1. SAMPLE_NESTED → fields payload, payload.customer; count 2; passes 1', ()
     { path: 'payload.customer', depth: 2 },
   ])
   assert.equal(r.count, 2)
-  assert.equal(r.passes, 1)
   assert.deepEqual(r.value.payload.customer, { id: 7, tier: 'gold' })
 })
 t('field paths through arrays + non-ident keys', () => {
@@ -67,43 +66,54 @@ t('field paths through arrays + non-ident keys', () => {
   )
   assert.deepEqual(r.value, { items: [{ meta: { x: 1 } }], 'k y': [1, 2] })
 })
-t(
-  '3. fields escaped to different depths: repeat:false leaves a string, repeat:true unwraps with passes ≥ 2',
-  () => {
-    const inner = JSON.stringify({ a: 1 }) // {"a":1}
-    const doubled = JSON.stringify(inner) // "{\"a\":1}"  (a JSON string whose content is JSON)
-    const value = {
-      once: inner,
-      twice: doubled,
-      plain: 'hello',
-      quoted: JSON.stringify('hello'),
-      num: '42',
-    }
-    const one = unwrapNested(value)
-    assert.deepEqual(one.value.once, { a: 1 })
-    assert.equal(typeof one.value.twice, 'string') // ยังค้างเป็นสตริง
-    assert.equal(one.passes, 1)
-    const all = unwrapNested(value, { repeat: true })
-    assert.deepEqual(all.value.twice, { a: 1 })
-    assert.ok(all.passes >= 2, `passes ${all.passes}`)
-    assert.deepEqual(all.fields.map((f) => f.path).sort(), ['once', 'twice'])
-    assert.equal(all.count, 2)
-    // ค่าที่ไม่ใช่ JSON ต้องไม่ถูกแตะ
-    assert.equal(all.value.plain, 'hello')
-    assert.equal(all.value.quoted, '"hello"')
-    assert.equal(all.value.num, '42')
-    assert.equal(one.value.quoted, '"hello"')
+t('3. ฟิลด์ที่ escape ต่างระดับกันแกะครบในรอบเดียว (#56 — ไม่มี toggle แกะซ้ำแล้ว)', () => {
+  const inner = JSON.stringify({ a: 1 }) // {"a":1}
+  const doubled = JSON.stringify(inner) // "{\"a\":1}" (สตริง JSON ที่ข้างในเป็น JSON อีกชั้น)
+  const tripled = JSON.stringify(doubled)
+  const value = {
+    once: inner,
+    twice: doubled,
+    thrice: tripled,
+    plain: 'hello',
+    quoted: JSON.stringify('hello'),
+    num: '42',
+    nestedTwice: JSON.stringify({ inner: doubled }),
   }
-)
-t('4. pathological: 20 string layers stops at passes 8', () => {
+  const r = unwrapNested(value)
+  assert.deepEqual(r.value.once, { a: 1 })
+  assert.deepEqual(r.value.twice, { a: 1 })
+  assert.deepEqual(r.value.thrice, { a: 1 })
+  assert.deepEqual(r.value.nestedTwice, { inner: { a: 1 } })
+  assert.deepEqual(
+    r.fields.map((f) => f.path),
+    ['once', 'twice', 'thrice', 'nestedTwice', 'nestedTwice.inner']
+  )
+  assert.deepEqual(
+    r.fields.map((f) => f.depth),
+    [1, 1, 1, 1, 2]
+  )
+  assert.equal(r.count, 5)
+  // ค่าที่ไม่ใช่ JSON ต้องไม่ถูกแตะ
+  assert.equal(r.value.plain, 'hello')
+  assert.equal(r.value.quoted, '"hello"')
+  assert.equal(r.value.num, '42')
+})
+t('4. เคสเทียม: สตริง escape ซ้อน 20 ชั้น หยุดที่ 8 และคืนค่าเดิมทั้งก้อน (ไม่ทำลายข้อมูล)', () => {
   let s = '{"a":1}'
   for (let i = 0; i < 20; i++) s = JSON.stringify(s)
-  const r = unwrapNested({ deep: s }, { repeat: true })
-  assert.equal(r.passes, 8)
-  assert.equal(typeof r.value.deep, 'string')
+  const r = unwrapNested({ deep: s })
+  assert.equal(r.value.deep, s)
+  assert.deepEqual(r.fields, [])
+  // 8 ชั้นพอดียังแกะได้
+  let ok = '{"a":1}'
+  for (let i = 0; i < 8; i++) ok = JSON.stringify(ok)
+  assert.deepEqual(unwrapNested({ deep: ok }).value.deep, { a: 1 })
 })
-t('repeat with nothing to do → passes 1; already JSON → no fields', () => {
-  const r = unwrapNested({ a: 1, b: 'x' }, { repeat: true })
-  assert.deepEqual(r, { value: { a: 1, b: 'x' }, count: 0, fields: [], passes: 1 })
+t('JSON อยู่แล้ว → ไม่มี fields', () => {
+  assert.deepEqual(unwrapNested({ a: 1, b: 'x' }), {
+    value: { a: 1, b: 'x' },
+    count: 0,
+    fields: [],
+  })
 })
 done()

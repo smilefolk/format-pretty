@@ -118,8 +118,26 @@ const STATIC = [
     en: 'Open file',
     group: 'document',
     glyph: '↥',
-    when: tool('format'),
+    when: tool('format', 'unwrap'),
     run: act('openFile'),
+  },
+  {
+    id: 'open-file-left',
+    th: 'เปิดไฟล์ลงก้อนซ้าย',
+    en: 'Open file into left',
+    group: 'document',
+    glyph: '↥',
+    when: tool('compare'),
+    run: act('openFileLeft'),
+  },
+  {
+    id: 'open-file-right',
+    th: 'เปิดไฟล์ลงก้อนขวา',
+    en: 'Open file into right',
+    group: 'document',
+    glyph: '↥',
+    when: tool('compare'),
+    run: act('openFileRight'),
   },
   {
     id: 'clear',
@@ -293,16 +311,6 @@ const STATIC = [
     run: (ctx) => ctx.set('deep', !ctx.doc.deep),
     state: (ctx) => onIf(ctx.doc.deep),
   },
-  {
-    id: 'repeat',
-    th: 'แกะซ้ำจนสุด',
-    en: 'Repeat until stable',
-    group: 'options',
-    glyph: '↻',
-    when: tool('unwrap'),
-    run: (ctx) => ctx.set('repeat', !ctx.doc.repeat),
-    state: (ctx) => onIf(ctx.doc.repeat),
-  },
 
   // ---- เครื่องมือ ----
   ...['format', 'compare', 'unwrap'].map((id) => ({
@@ -356,18 +364,100 @@ export function listCommands(ctx) {
   return [...STATIC, ...docCommands(ctx)].filter((cmd) => !cmd.when || cmd.when(ctx))
 }
 
-// ค้นหา: substring ไม่สนตัวพิมพ์ทั้ง th และ en เรียงตามตำแหน่งที่พบ (เจอเร็ว = ตรงกว่า)
-export function searchCommands(commands, query) {
+// ---- ค้นหาและจัดอันดับ ----------------------------------------------------------------------
+//
+// คะแนนต่อคำสั่ง = คะแนนที่ดีที่สุดจาก th/en: ขึ้นต้นข้อความ 3 · ขึ้นต้นคำ 2 · กลางคำ 1 (ไม่เจอ = ไม่แสดง)
+// ภาษาที่กำลังใช้ได้ +0.5; เสมอกันเรียงตามน้ำหนักกลุ่ม (เอกสาร > ตั้งค่า > เครื่องมือ > ทั่วไป) แล้วคำสั่งที่เพิ่งใช้
+// ขอบเขตคำไทยใช้ Intl.Segmenter (มีในเบราว์เซอร์สมัยใหม่และ node) ไม่มีก็ถือว่าขึ้นต้นคำเฉพาะหลังช่องว่าง/เครื่องหมาย
+
+const segmenter =
+  typeof Intl !== 'undefined' && typeof Intl.Segmenter === 'function'
+    ? new Intl.Segmenter(['th', 'en'], { granularity: 'word' })
+    : null
+
+function wordStarts(text) {
+  const starts = new Set([0])
+  if (segmenter) {
+    for (const seg of segmenter.segment(text)) starts.add(seg.index)
+  } else {
+    for (const m of text.matchAll(/[\s·/→(-]+/g)) starts.add(m.index + m[0].length)
+  }
+  return starts
+}
+
+function matchScore(text, q) {
+  const lower = text.toLowerCase()
+  const index = lower.indexOf(q)
+  if (index < 0) return 0
+  if (index === 0) return 3
+  return wordStarts(lower).has(index) ? 2 : 1
+}
+
+const GROUP_WEIGHT = Object.fromEntries(GROUPS.map((g, i) => [g.id, i]))
+
+/**
+ * จัดอันดับผลค้นหา → { primary, related }
+ * - primary = ตรงที่ต้นข้อความ/ต้นคำ (แสดงในกลุ่มเดิมของคำสั่ง) · related = เจอกลางคำ (กลุ่ม "คำสั่งที่ใกล้เคียง")
+ * - ไม่มีคำค้น: primary = ทุกคำสั่งตามลำดับเดิม, related = []
+ */
+export function rankCommands(commands, query, { lang = 'th', recent = [] } = {}) {
   const q = query.trim().toLowerCase()
-  if (!q) return commands
-  return commands
-    .map((cmd) => {
-      const positions = [cmd.th, cmd.en]
-        .map((s) => s.toLowerCase().indexOf(q))
-        .filter((p) => p >= 0)
-      return positions.length ? { cmd, pos: Math.min(...positions) } : null
+  if (!q) return { primary: commands, related: [] }
+  const recency = (id) => {
+    const i = recent.indexOf(id)
+    return i < 0 ? recent.length : i
+  }
+  const scored = commands
+    .map((cmd, order) => {
+      const th = matchScore(cmd.th, q)
+      const en = matchScore(cmd.en, q)
+      const best = Math.max(th, en)
+      if (!best) return null
+      const primaryLang = lang === 'en' ? en : th
+      return { cmd, order, score: best + (primaryLang === best && best ? 0.5 : 0) }
     })
     .filter(Boolean)
-    .sort((a, b) => a.pos - b.pos)
-    .map((x) => x.cmd)
+    .sort(
+      (a, b) =>
+        b.score - a.score ||
+        GROUP_WEIGHT[a.cmd.group] - GROUP_WEIGHT[b.cmd.group] ||
+        recency(a.cmd.id) - recency(b.cmd.id) ||
+        a.order - b.order
+    )
+  return {
+    primary: scored.filter((x) => x.score >= 2).map((x) => x.cmd),
+    related: scored.filter((x) => x.score < 2).map((x) => x.cmd),
+  }
+}
+
+// รายการแบน (primary ก่อน related) — สำหรับที่ไม่ต้องแยกกลุ่ม
+export function searchCommands(commands, query, options) {
+  const { primary, related } = rankCommands(commands, query, options)
+  return [...primary, ...related]
+}
+
+// ---- คำสั่งที่เพิ่งใช้ (MRU) — localStorage['fp-recent-commands'] สูงสุด RECENT_LIMIT ตัว ----------
+
+const RECENT_KEY = 'fp-recent-commands'
+export const RECENT_LIMIT = 6
+
+export function readRecent() {
+  try {
+    const list = JSON.parse(localStorage.getItem(RECENT_KEY) ?? '[]')
+    return Array.isArray(list) ? list.filter((id) => typeof id === 'string') : []
+  } catch {
+    return []
+  }
+}
+
+export function recordRecent(id, recent = readRecent()) {
+  // คำสั่งสลับเอกสารเฉพาะกิจ (doc:<id>) ไม่จำ
+  if (id.startsWith('doc:')) return recent
+  const next = [id, ...recent.filter((x) => x !== id)].slice(0, RECENT_LIMIT)
+  try {
+    localStorage.setItem(RECENT_KEY, JSON.stringify(next))
+  } catch {
+    /* เก็บไม่ได้ก็ใช้ในหน่วยความจำ */
+  }
+  return next
 }

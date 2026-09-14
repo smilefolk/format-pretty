@@ -40,7 +40,7 @@ rm -f ./__check.jsx
 
 - props ของแต่ละหน้า: `Formatter` ตามข้างบน; `Compare` = `left setLeft right setRight strategy setStrategy arrayKey
   setArrayKey showEqual setShowEqual notify`; `Unwrap` = `input setInput indent setIndent view setView deep setDeep
-  repeat setRepeat notify sendToFormatter`; `<App />` เรนเดอร์ได้ทั้งตัว (ไม่มี localStorage ก็ไม่พัง)
+  notify sendToFormatter`; `<App />` เรนเดอร์ได้ทั้งตัว (ไม่มี localStorage ก็ไม่พัง)
 - options panel / status strip ของหน้าเรนเดอร์ผ่าน portal → ตอน SSR จะ **ไม่มี** ใน HTML (ต้องดูในเบราว์เซอร์);
   `CommandPalette` เรนเดอร์ได้ตรง ๆ ด้วย `<CommandPalette open onClose={noop} ctx={…} />`
 - ทดสอบโหมดอังกฤษ: ครอบด้วย `<LangContext.Provider value="en">` จาก `src/lib/i18n`
@@ -78,7 +78,7 @@ label สองภาษาใช้ `<L th en />` และ `useT()` จาก 
 
 `App` ถือ `docs[]` + `activeId` ผ่าน `useDocs()` — หนึ่ง tab = เอกสารของเครื่องมือหนึ่ง (`doc.tool` เป็น
 `format` / `compare` / `unwrap`, D1) เนื้อหา (`input`, `left`/`right`) และตัวเลือกทั้งหมด (`indent`, `sortKeys`, `view`,
-`mergeChunks`, `deep`, `repeat`, `strategy`, `arrayKey`, `showEqual`) เป็นของแต่ละ doc (D8 — `indent`/`view` ไม่แชร์
+`mergeChunks`, `deep`, `strategy`, `arrayKey`, `showEqual`) เป็นของแต่ละ doc (D8 — `indent`/`view` ไม่แชร์
 ระหว่างเครื่องมือแล้ว) `App` ส่งลงหน้าเป็น props รูป `value` / `setValue` (setter = `update(doc.id, { key })`)
 หน้าจึงไม่เก็บ state ของอินพุต/ตัวเลือกเอง (state เฉพาะ UI เช่นตัวกรอง/คำค้นในหน้า Diff เก็บในหน้าได้)
 แต่ละหน้าถูก `key={doc.id}` ให้ได้ instance ใหม่ต่อ doc
@@ -101,7 +101,7 @@ state ระดับแอปที่ไม่อยู่ต่อเอก�
   คัดลอกรายงาน) · แถว diff คอลัมน์คงที่ (คลิก/Enter คัดลอก path); panel: ตัวกรอง / strategy index|key + ชื่อคีย์ /
   showEqual / การ์ดสรุป; วางสองก้อนในช่องซ้ายช่องเดียว = autoSplit
 - `Unwrap` — `.workbench`: Editor `wrap` + การ์ด chain "ชั้นที่แกะได้" + action bar (แกะสตริง ⌘↵ = เขียนผลทับช่องซ้าย
-  ตาม D5, ตัวอย่าง, ล้าง) · ผลลัพธ์ + แถบล่างส่งไปหน้าจัดรูปแบบ; panel: deep / repeat / indent / view / StatGrid
+  ตาม D5, ตัวอย่าง, ล้าง) · ผลลัพธ์ + แถบล่างส่งไปหน้าจัดรูปแบบ; panel: deep / indent / view / StatGrid
 
 ### Action และ command palette (`src/hooks/useActions.js` + `src/lib/commands.js`)
 
@@ -110,13 +110,19 @@ result/output ที่หน้าถืออยู่ แล้วได้ o
 `usePublishActions(actions)` ลงทะเบียนเข้า `ActionsContext` (ref ที่ `App` ถือ ไม่ re-render) — ⌘K
 (`components/CommandPalette.jsx`) เรียก `listCommands(ctx)` จาก `lib/commands.js` ซึ่ง `run(ctx)` ไปเรียก
 `ctx.actions.<ชื่อ>` **ตัวเดียวกับปุ่ม** จึงไม่มี logic ซ้ำสองที่ helper ร่วม (`copyText`, `downloadText`,
-`readTextFile`) ก็อยู่ในไฟล์นี้
+`readTextFile(file, onText(text, fileName), notify)`) ก็อยู่ในไฟล์นี้; `<input type="file">` ที่ซ่อนอยู่มาจาก
+`hooks/useFilePicker.jsx` (`{ open, input }`) — Formatter/Unwrap มีปุ่มเปิดไฟล์ + ⌘K, Compare มีแค่ลากวาง + ⌘K
+(ซ้าย/ขวา) ตาม mock; ไฟล์ที่เปิดลง doc ที่ยังชื่อ "เอกสาร n" จะตั้งชื่อ tab ตามไฟล์ (`App.onFileName` →
+`isDefaultName` ใน `lib/docs.js`; reducer `rename` กันชื่อซ้ำด้วย ` (2)`)
 
 คำสั่ง = `{ id, th, en, group, glyph, keys?, when?(ctx), run(ctx), state?(ctx) → 'เปิดอยู่' | null }` กลุ่ม
 เอกสาร / ตั้งค่า / เครื่องมือ / ทั่วไป; `when` ซ่อนตามเครื่องมือ (เช่น `fix` โชว์เฉพาะเมื่อ `actions.fix` มีค่า);
 คำสั่งสลับเอกสารสร้าง dynamic จาก `docs`; `ctx` สร้างใน `App` (`commandCtx`: doc, docs, actions (getter อ่าน ref สด
 เพราะหน้าลงทะเบียนหลัง App render), set, openTool, newDoc, closeDoc, activateDoc, theme, toggleTheme, lang, setLang)
-`searchCommands()` ค้นทั้ง th/en แบบ substring เรียงตามตำแหน่งที่พบ ตัวอย่างข้อมูลทุกหน้าอยู่ `lib/samples.js`
+`rankCommands(commands, q, { lang, recent })` ให้คะแนน ขึ้นต้นข้อความ 3 / ขึ้นต้นคำ 2 (ขอบเขตคำไทยจาก `Intl.Segmenter`) /
+กลางคำ 1 → `{ primary, related }` (palette แสดง primary ในกลุ่มเดิม, related ในกลุ่ม "คำสั่งที่ใกล้เคียง"); เสมอกันเรียงตาม
+น้ำหนักกลุ่มแล้วคำสั่งที่เพิ่งใช้ (MRU `localStorage['fp-recent-commands']` ≤ 6 — โชว์เป็นกลุ่ม "ล่าสุด" เมื่อยังไม่พิมพ์)
+ตัวอย่างข้อมูลทุกหน้าอยู่ `lib/samples.js`
 (D4: ตัวอย่างเรียกจาก ⌘K; หน้า Unwrap มีปุ่มสลับตัวอย่างด้วยตาม mock)
 
 ### ไลบรารี (`src/lib/`)
@@ -140,11 +146,12 @@ result/output ที่หน้าถืออยู่ แล้วได้ o
   `added` / `removed` / `changed` / `type` (+ `equal` เฉพาะใบเมื่อ `includeEqual`); อาร์เรย์เทียบตาม index เป็นค่าเริ่มต้น
   ส่ง `arrayKey` เพื่อจับคู่ด้วยค่าคีย์ (path ตาม D6 `$.items[id=7]` / `$.items[sku="X1"]`) อาร์เรย์ที่จับคู่ไม่ได้
   (มี primitive/คีย์หาย/คีย์ซ้ำ) fallback เป็น index เฉพาะอาร์เรย์นั้น — `diffJsonWithMeta()` คืน `{ diffs, fallbacks }`
-  ให้ UI แสดง notice; `countKeys()` นับใบที่ตรงกัน/รวม (นิยาม leaf path — ดู #55); `summarize()` / `toReport()` ไม่นับ `equal`
+  ให้ UI แสดง notice; `countKeys()` นับใบ (leaf path) ที่ตรงกัน/รวม — การ์ดสรุปจึงเขียนว่า "ค่าที่ตรงกัน · ค่ารวม" (เคาะใน #55);
+  `summarize()` / `toReport()` ไม่นับ `equal`
 - `unwrap.js` — `unwrapJson()` แกะ JSON ที่ถูก escape เป็นสตริงทีละชั้น ≤ 12 ชั้น รองรับทั้งแบบมีและไม่มีเครื่องหมายคำพูดครอบ
-  คืน `layers` (ตัวเลข) + `peels[{ n, where:'string' }]`; `unwrapNested(value, { repeat })` แกะสตริง JSON ในฟิลด์ย่อย
-  คืน `{ value, count, fields[{ path, depth }], passes }` — หนึ่งรอบแกะสตริง→อ็อบเจ็กต์จนสุด แต่สตริง→สตริง (escape ซ้อน)
-  แกะทีละชั้น `repeat:true` วนจนนิ่ง ≤ 8 รอบ (semantics นี้อยู่ระหว่างเคาะใน #56)
+  คืน `layers` (ตัวเลข) + `peels[{ n, where:'string' }]`; `unwrapNested(value)` แกะสตริง JSON ในฟิลด์ย่อยจนสุดในรอบเดียว
+  (ทั้งสตริง→อ็อบเจ็กต์แบบ recursive และสตริง→สตริงที่ escape ซ้อน ≤ 8 ชั้นต่อฟิลด์ — เกินนั้นคืนค่าเดิม ไม่ทำลายข้อมูล)
+  คืน `{ value, count, fields[{ path, depth }] }` — เคาะใน #56 ว่าไม่มี toggle "แกะซ้ำ" แล้ว
 - `fix.js` — `fixJson(text)` แก้ JSON แบบกลไกจากตำแหน่ง error ของ `parseJson` (จุลภาคท้าย / จุลภาคซ้ำ / single quote /
   คีย์ไม่มี quote) re-parse ยืนยันทุกรอบ ≤ 5 รอบ คืน `{ fixed, applied[] }` หรือ `null` — ห้ามคืนข้อความที่ parse ไม่ผ่าน;
   Formatter โชว์ปุ่ม "แก้ให้อัตโนมัติ" เฉพาะเมื่อได้ผล (input ≤ 256 KB) และไม่ apply เอง (D7)

@@ -1,16 +1,18 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { GROUPS, listCommands, searchCommands } from '../lib/commands'
+import { GROUPS, listCommands, rankCommands, readRecent, recordRecent } from '../lib/commands'
 import { useLang, useT } from '../lib/i18n'
 import { KeyCap } from './ui'
 
 // ⌘K — modal ค้นหาคำสั่งจาก registry (lib/commands.js) ใช้ได้ด้วยคีย์บอร์ดล้วน
-// - ไม่มีคำค้น: จัดกลุ่มตาม GROUPS · มีคำค้น: กลุ่มเดียว "คำสั่งที่ใกล้เคียง" เรียงตามตำแหน่งที่พบ
+// - ไม่มีคำค้น: กลุ่ม "ล่าสุด" (MRU จาก localStorage) แล้วตาม GROUPS · มีคำค้น: คำสั่งที่ตรงต้นคำอยู่ในกลุ่มเดิมของมัน
+//   ส่วนที่เจอกลางคำอยู่ในกลุ่ม "คำสั่งที่ใกล้เคียง" (rankCommands ใน lib/commands.js)
 // - focus อยู่ที่ช่องค้นหาตลอด (Tab ถูกกัน) — App คืน focus ให้ element เดิมตอนปิด
 export default function CommandPalette({ open, onClose, ctx }) {
   const t = useT()
   const lang = useLang()
   const [query, setQuery] = useState('')
   const [selected, setSelected] = useState(0)
+  const [recent, setRecent] = useState(readRecent)
   const inputRef = useRef(null)
   const listRef = useRef(null)
 
@@ -18,17 +20,28 @@ export default function CommandPalette({ open, onClose, ctx }) {
   const commands = useMemo(() => (open ? listCommands(ctx) : []), [open, ctx])
   const needle = query.trim()
   const sections = useMemo(() => {
+    const byGroup = (list) =>
+      GROUPS.map((g) => ({ ...g, items: list.filter((c) => c.group === g.id) })).filter(
+        (g) => g.items.length
+      )
     if (needle) {
-      const found = searchCommands(commands, needle)
-      return found.length
-        ? [{ id: 'related', th: 'คำสั่งที่ใกล้เคียง', en: 'Related', items: found }]
-        : []
+      const { primary, related } = rankCommands(commands, needle, { lang, recent })
+      const groups = byGroup(primary)
+      if (related.length)
+        groups.push({ id: 'related', th: 'คำสั่งที่ใกล้เคียง', en: 'Related', items: related })
+      return groups
     }
-    return GROUPS.map((g) => ({ ...g, items: commands.filter((c) => c.group === g.id) })).filter(
-      (g) => g.items.length
-    )
-  }, [commands, needle])
-  const flat = useMemo(() => sections.flatMap((s) => s.items), [sections])
+    const recentItems = recent.map((id) => commands.find((c) => c.id === id)).filter(Boolean)
+    const groups = byGroup(commands)
+    if (recentItems.length)
+      groups.unshift({ id: 'recent', th: 'ล่าสุด', en: 'Recent', items: recentItems })
+    return groups
+  }, [commands, needle, lang, recent])
+  // แถวแบนสำหรับ ↑↓ — คำสั่งเดียวกันโผล่ได้สองที่ (กลุ่มล่าสุด + กลุ่มเดิม) จึงระบุตัวด้วย section:id ไม่ใช่ cmd
+  const flat = useMemo(
+    () => sections.flatMap((s) => s.items.map((cmd) => ({ key: `${s.id}:${cmd.id}`, cmd }))),
+    [sections]
+  )
 
   // เปิดใหม่ทุกครั้ง: ล้างคำค้น เลือกแถวแรก focus ช่องค้นหา
   useEffect(() => {
@@ -48,10 +61,12 @@ export default function CommandPalette({ open, onClose, ctx }) {
 
   if (!open) return null
 
-  const current = flat[Math.min(selected, flat.length - 1)]
+  const currentRow = flat[Math.min(selected, flat.length - 1)]
+  const current = currentRow?.cmd
 
   const runCommand = (cmd) => {
     onClose()
+    setRecent(recordRecent(cmd.id, recent))
     cmd.run(ctx)
   }
 
@@ -76,7 +91,7 @@ export default function CommandPalette({ open, onClose, ctx }) {
   const label = (cmd) => (lang === 'en' ? cmd.en : cmd.th)
   const hint = (cmd) => (lang === 'en' ? cmd.th : cmd.en)
   const groupLabel = (g) => (lang === 'en' ? g.en : `${g.th} · ${g.en.toUpperCase()}`)
-  const optionId = (cmd) => `cmd-${cmd.id}`
+  const optionId = (row) => `cmd-${row.key.replace(':', '-')}`
 
   return (
     <div className="palette-scrim" onMouseDown={onClose}>
@@ -103,7 +118,7 @@ export default function CommandPalette({ open, onClose, ctx }) {
             aria-expanded="true"
             aria-controls="palette-list"
             aria-autocomplete="list"
-            aria-activedescendant={current ? optionId(current) : undefined}
+            aria-activedescendant={currentRow ? optionId(currentRow) : undefined}
             autoComplete="off"
             spellCheck={false}
           />
@@ -120,16 +135,17 @@ export default function CommandPalette({ open, onClose, ctx }) {
             <div key={section.id} role="group" aria-label={groupLabel(section)}>
               <div className="palette-group">{groupLabel(section)}</div>
               {section.items.map((cmd) => {
-                const isSelected = cmd === current
+                const row = { key: `${section.id}:${cmd.id}`, cmd }
+                const isSelected = row.key === currentRow?.key
                 const state = cmd.state?.(ctx)
                 return (
                   <div
                     key={cmd.id}
-                    id={optionId(cmd)}
+                    id={optionId(row)}
                     className={isSelected ? 'palette-row selected' : 'palette-row'}
                     role="option"
                     aria-selected={isSelected}
-                    onMouseEnter={() => setSelected(flat.indexOf(cmd))}
+                    onMouseEnter={() => setSelected(flat.findIndex((r) => r.key === row.key))}
                     onClick={() => runCommand(cmd)}
                   >
                     <span className="palette-glyph" aria-hidden="true">
@@ -158,7 +174,7 @@ export default function CommandPalette({ open, onClose, ctx }) {
           <span>↵ {t('เลือก', 'select')}</span>
           <span>⌘K {t('ปิด', 'close')}</span>
           <span className="palette-count">
-            {flat.length} {t('คำสั่ง', 'commands')}
+            {needle ? flat.length : commands.length} {t('คำสั่ง', 'commands')}
           </span>
         </div>
       </div>

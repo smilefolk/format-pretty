@@ -1052,6 +1052,10 @@ textarea.input::placeholder {
 .segmented.vertical > button {
   padding: 6px 10px;
   text-align: left;
+  /* label ยาว (เช่นชื่อคีย์ที่ผู้ใช้พิมพ์ในโหมดจับคู่ด้วยคีย์) ตัดด้วย … ไม่ดัน panel */
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .segmented > button.mono {
@@ -1066,6 +1070,11 @@ textarea.input::placeholder {
   background: var(--border);
   color: var(--text);
   font-weight: 600;
+}
+
+/* ตัวเลือก mono (2 / 4) ที่เลือกอยู่เป็น 500 ตาม mock — ตัวเลขหนา 600 ดูล้นกว่าตัวอักษรไทย */
+.segmented > button.mono[aria-checked='true'] {
+  font-weight: 500;
 }
 
 .toggle {

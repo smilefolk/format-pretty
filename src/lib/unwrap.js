@@ -3,15 +3,16 @@
 // รวมถึงกรณีถูก escape ซ้อนกันหลายชั้น
 //
 // - unwrapJson(text): แกะชั้นนอก (ทั้งก้อน) — คืน layers (ตัวเลข) และ peels [{ n, where:'string' }] สำหรับ chain card
-// - unwrapNested(value, { repeat }): แกะสตริง JSON ที่ซ่อนในฟิลด์ — คืน fields [{ path, depth }] และ passes;
-//   หนึ่งรอบแกะสตริง→อ็อบเจ็กต์ให้สุด แต่สตริง→สตริง (escape ซ้อน) แกะทีละชั้น จึงต้อง repeat ถ้าฟิลด์
-//   escape ต่างระดับกัน (สูงสุด MAX_PASSES รอบ)
+// - unwrapNested(value): แกะสตริง JSON ที่ซ่อนในฟิลด์ — คืน fields [{ path, depth }]; แกะจนสุดในรอบเดียว
+//   ทั้งสตริง→อ็อบเจ็กต์ (recursive) และสตริง→สตริง (escape ซ้อน ≤ MAX_STRING_LAYERS ชั้นต่อฟิลด์) — ตัดสินใจใน #56
+//   ว่าไม่ต้องมี toggle "แกะซ้ำ" เพราะโหมดปกติที่เหลือสตริงค้างไว้ทำให้ผู้ใช้งง
 
 import { parseJson } from './json'
 import { childPath } from './path'
 
 const MAX_LAYERS = 12
-const MAX_PASSES = 8
+// กันสตริงที่ escape ซ้อนไม่รู้จบ (เคสเทียม) — ต่อฟิลด์
+const MAX_STRING_LAYERS = 8
 
 // ข้อความที่ "ดูเหมือน JSON" พอจะลองแกะ: อ็อบเจ็กต์ อาร์เรย์ หรือสตริงที่ครอบด้วยเครื่องหมายคำพูด
 const LOOKS_JSON_RE = /^["{[]/
@@ -72,27 +73,26 @@ export function unwrapJson(text) {
 /**
  * แกะสตริงที่ซ่อน JSON ไว้ "ภายในแต่ละฟิลด์" ด้วย
  * เช่น {"body":"{\"a\":1}"} → {"body":{"a":1}}
- * คืน { value, count, fields:[{ path, depth }], passes } — depth = จำนวนชั้นที่ซ้อนอยู่ในฟิลด์ที่แกะมาก่อน + 1
+ * คืน { value, count, fields:[{ path, depth }] } — depth = จำนวนชั้นที่ซ้อนอยู่ในฟิลด์ที่แกะมาก่อน + 1
  */
-export function unwrapNested(value, { repeat = false } = {}) {
+export function unwrapNested(value) {
   const fields = []
-  let changed = false
 
   const walk = (node, path, depth) => {
     if (typeof node === 'string') {
-      const trimmed = node.trim()
-      if (!LOOKS_JSON_RE.test(trimmed)) return node
-      const result = parseJson(trimmed)
-      if (!result.ok) return node
-      if (typeof result.value === 'object' && result.value !== null) {
-        fields.push({ path, depth })
-        changed = true
-        return walk(result.value, path, depth + 1)
-      }
-      // สตริงที่ escape ซ้อน: แกะออกหนึ่งชั้นเฉพาะเมื่อข้างในยังดูเหมือน JSON (ไม่แตะ "\"hello\"")
-      if (typeof result.value === 'string' && LOOKS_JSON_RE.test(result.value.trim())) {
-        changed = true
-        return result.value.trim()
+      // ปอกสตริงที่ escape ซ้อน ("\"{…}\"") ทีละชั้นจนกว่าจะได้ JSON จริงหรือหมดชั้น — เฉพาะเมื่อข้างในยัง
+      // ดูเหมือน JSON (ไม่แตะ "\"hello\"" / "42") และแต่ละชั้นต้อง parse ผ่านจึงไม่ทำลายข้อมูล
+      let text = node.trim()
+      for (let layer = 0; layer <= MAX_STRING_LAYERS; layer++) {
+        if (!LOOKS_JSON_RE.test(text)) return node
+        const result = parseJson(text)
+        if (!result.ok) return node
+        if (typeof result.value === 'object' && result.value !== null) {
+          fields.push({ path, depth })
+          return walk(result.value, path, depth + 1)
+        }
+        if (typeof result.value !== 'string') return node
+        text = result.value.trim()
       }
       return node
     }
@@ -105,15 +105,6 @@ export function unwrapNested(value, { repeat = false } = {}) {
     return node
   }
 
-  let current = value
-  let passes = 0
-  do {
-    changed = false
-    current = walk(current, '', 1)
-    passes++
-  } while (repeat && changed && passes < MAX_PASSES)
-  // รอบสุดท้ายที่ไม่มีอะไรเปลี่ยนคือรอบยืนยัน ไม่นับเป็นรอบที่แกะ
-  if (passes > 1 && !changed) passes--
-
-  return { value: current, count: fields.length, fields, passes }
+  const out = walk(value, '', 1)
+  return { value: out, count: fields.length, fields }
 }

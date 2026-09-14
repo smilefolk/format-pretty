@@ -11,6 +11,18 @@ export const CONTENT_LIMIT = 1024 * 1024
 
 const NAME_PREFIX = 'เอกสาร '
 
+// ชื่อที่ระบบตั้งให้ ("เอกสาร n") — เปิดไฟล์ลง doc ชื่อแบบนี้จะเปลี่ยนเป็นชื่อไฟล์ ถ้าผู้ใช้ตั้งชื่อเองแล้วไม่ทับ
+export const isDefaultName = (name) => /^เอกสาร \d+$/.test(name ?? '')
+
+// ชื่อไม่ซ้ำกับ doc อื่น — ซ้ำแล้วต่อท้าย (2), (3), … (เช่นเปิดไฟล์ชื่อเดียวกันสองครั้ง)
+export function uniqueName(docs, name, excludeId) {
+  const taken = new Set(docs.filter((d) => d.id !== excludeId).map((d) => d.name))
+  if (!taken.has(name)) return name
+  let n = 2
+  while (taken.has(`${name} (${n})`)) n++
+  return `${name} (${n})`
+}
+
 export const DOC_DEFAULTS = Object.freeze({
   // เนื้อหา (ใช้ตาม tool)
   input: '',
@@ -22,9 +34,10 @@ export const DOC_DEFAULTS = Object.freeze({
   view: 'code',
   // Formatter
   mergeChunks: true,
+  // line ending ของข้อความที่นำเข้าล่าสุด (ไฟล์/วางทับทั้งหมด) — 'lf' | 'crlf'; ดู lineEndingOf ใน lib/json.js
+  lineEnding: 'lf',
   // Unwrap
   deep: true,
-  repeat: false,
   // Diff
   strategy: 'index',
   arrayKey: 'id',
@@ -96,7 +109,11 @@ export function docsReducer(state, action) {
     case 'rename': {
       const name = action.name?.trim()
       if (!name) return state
-      return docsReducer(state, { type: 'update', id: action.id, patch: { name } })
+      return docsReducer(state, {
+        type: 'update',
+        id: action.id,
+        patch: { name: uniqueName(state.docs, name, action.id) },
+      })
     }
 
     case 'close': {

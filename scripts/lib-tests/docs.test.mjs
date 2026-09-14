@@ -9,9 +9,11 @@ import {
   deserializeDocs,
   docsReducer,
   initialDocsState,
+  isDefaultName,
   latestDocForTool,
   nextDocName,
   serializeDocs,
+  uniqueName,
 } from '../../src/lib/docs.js'
 
 const r = docsReducer
@@ -26,6 +28,7 @@ t('initial state: one blank doc of the tool, active, recent', () => {
   assert.equal(s.docs[0].indent, '2')
   assert.equal(s.docs[0].sortKeys, false)
   assert.equal(s.docs[0].mergeChunks, true)
+  assert.equal(s.docs[0].lineEnding, 'lf')
 })
 t('names: smallest unused number; unknown tool throws', () => {
   assert.equal(nextDocName([{ name: 'เอกสาร 1' }, { name: 'เอกสาร 3' }]), 'เอกสาร 2')
@@ -71,6 +74,25 @@ t('close active → next to the right, else left', () => {
   s = r(s, { type: 'close', id: c.id })
   assert.equal(s.activeId, s.docs[0].id)
 })
+t('ชื่อ default / ชื่อไม่ซ้ำตอน rename (เปิดไฟล์ชื่อเดียวกันสองครั้ง → orders.json (2))', () => {
+  assert.equal(isDefaultName('เอกสาร 1'), true)
+  assert.equal(isDefaultName('เอกสาร 12'), true)
+  assert.equal(isDefaultName('orders.json'), false)
+  assert.equal(isDefaultName('เอกสาร x'), false)
+  let s = initialDocsState('format')
+  const b = createDoc('format', {}, s.docs)
+  s = r(s, { type: 'open', doc: b })
+  s = r(s, { type: 'rename', id: s.docs[0].id, name: 'orders.json' })
+  s = r(s, { type: 'rename', id: b.id, name: 'orders.json' })
+  assert.deepEqual(
+    s.docs.map((d) => d.name),
+    ['orders.json', 'orders.json (2)']
+  )
+  // rename เป็นชื่อเดิมของตัวเองไม่ต่อท้าย
+  s = r(s, { type: 'rename', id: b.id, name: 'orders.json (2)' })
+  assert.equal(s.docs[1].name, 'orders.json (2)')
+  assert.equal(uniqueName(s.docs, 'orders.json'), 'orders.json (3)')
+})
 t('latestDocForTool follows MRU', () => {
   let s = initialDocsState('format')
   const u1 = createDoc('unwrap', {}, s.docs),
@@ -97,6 +119,13 @@ t('serialize / deserialize round-trip; tooLarge keeps metadata only; bad input �
   assert.equal(back.docs[0].input, '{"a":1}')
   assert.equal(back.docs[1].tool, 'unwrap')
   assert.equal(deserializeDocs('not json'), null)
+  // doc เก่าที่ยังไม่มีธง lineEnding → default 'lf'
+  const legacy = JSON.stringify({
+    version: 1,
+    activeDocId: 'x',
+    docs: [{ id: 'x', tool: 'format', name: 'เอกสาร 1' }],
+  })
+  assert.equal(deserializeDocs(legacy).docs[0].lineEnding, 'lf')
   assert.equal(deserializeDocs('{"version":99}'), null)
   // ธง tooLarge ไม่ค้าง: เนื้อหาเล็กลงแล้ว serialize ใหม่ต้องเก็บจริง
   const shrunk = r(back, { type: 'update', id: big.id, patch: { input: 'small' } })
