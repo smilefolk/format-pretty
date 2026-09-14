@@ -825,6 +825,16 @@ textarea.input::placeholder {
   box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--accent) 55%, transparent);
 }
 
+/* โหมดตัวอย่างสำหรับเอกสารใหญ่ (Editor) */
+.editor-notice {
+  flex: none;
+  padding: 6px 14px;
+  border-bottom: 1px solid var(--border-soft);
+  background: color-mix(in srgb, var(--tok-number) 12%, var(--bg));
+  font-size: 11.5px;
+  color: var(--text-2);
+}
+
 /* ระหว่างลากไฟล์มาวาง */
 .editor.dragging {
   outline: 1.5px dashed var(--accent);
@@ -838,6 +848,12 @@ textarea.input::placeholder {
 .code-view .code {
   flex: 1;
   white-space: pre;
+}
+
+/* virtualized: spacer ด้านบน/ล่างแทนบรรทัดที่ยังไม่เรนเดอร์ — ทั้ง gutter และ pre เลื่อนไปด้วยกันใน .code-view */
+.code-view.virtual .code > div,
+.code-view.virtual .gutter > div {
+  flex: none;
 }
 
 .output {

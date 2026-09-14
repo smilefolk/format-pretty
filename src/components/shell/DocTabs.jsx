@@ -16,9 +16,16 @@ export function docStatus(doc) {
   return of(parseJson(doc.input, { merge: doc.mergeChunks }))
 }
 
+// doc ที่เนื้อหาใหญ่กว่านี้ไม่ parse ซ้ำทุกคีย์ (หน้าเองก็ parse อยู่แล้ว) — คิดสถานะใหม่หลังหยุดพิมพ์ STATUS_DELAY ms
+const LARGE_DOC = 256 * 1024
+const STATUS_DELAY = 400
+const docSize = (doc) => doc.input.length + doc.left.length + doc.right.length
+
 // คำนวณสถานะเฉพาะ doc ที่เนื้อหาเปลี่ยน (ปกติคืออันที่กำลังพิมพ์) — อันอื่นใช้ผลที่ cache ไว้
 function useDocStatuses(docs) {
   const cache = useRef(new Map())
+  const timers = useRef(new Map())
+  const [, rerender] = useState(0)
   const statuses = {}
   const seen = new Set()
   for (const doc of docs) {
@@ -30,19 +37,40 @@ function useDocStatuses(docs) {
       hit.left !== doc.left ||
       hit.right !== doc.right ||
       hit.mergeChunks !== doc.mergeChunks
-    const status = changed ? docStatus(doc) : hit.status
+    let status = hit?.status
     if (changed) {
-      cache.current.set(doc.id, {
+      const snapshot = {
         input: doc.input,
         left: doc.left,
         right: doc.right,
         mergeChunks: doc.mergeChunks,
-        status,
-      })
+      }
+      if (hit && docSize(doc) > LARGE_DOC) {
+        // ใหญ่: คงจุดเดิมไว้ก่อน แล้วค่อยคิดใหม่เมื่อหยุดพิมพ์
+        clearTimeout(timers.current.get(doc.id))
+        timers.current.set(
+          doc.id,
+          setTimeout(() => {
+            cache.current.set(doc.id, { ...snapshot, status: docStatus(doc) })
+            timers.current.delete(doc.id)
+            rerender((n) => n + 1)
+          }, STATUS_DELAY)
+        )
+        cache.current.set(doc.id, { ...snapshot, status })
+      } else {
+        status = docStatus(doc)
+        cache.current.set(doc.id, { ...snapshot, status })
+      }
     }
     statuses[doc.id] = status
   }
-  for (const id of cache.current.keys()) if (!seen.has(id)) cache.current.delete(id)
+  for (const id of cache.current.keys()) {
+    if (!seen.has(id)) {
+      cache.current.delete(id)
+      clearTimeout(timers.current.get(id))
+      timers.current.delete(id)
+    }
+  }
   return statuses
 }
 

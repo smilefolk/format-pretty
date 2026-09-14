@@ -45,7 +45,8 @@ rm -f ./__check.jsx
   `CommandPalette` เรนเดอร์ได้ตรง ๆ ด้วย `<CommandPalette open onClose={noop} ctx={…} />`
 - ทดสอบโหมดอังกฤษ: ครอบด้วย `<LangContext.Provider value="en">` จาก `src/lib/i18n`
 - ข้อควรระวังตอนเขียน assertion: `renderToString` แทรก `<!-- -->` ระหว่าง text node และ escape `"`
-  เป็น `&quot;` ดังนั้นให้ strip ทั้งสองอย่างก่อนค้นข้อความ
+  เป็น `&quot;` ดังนั้นให้ strip ทั้งสองอย่างก่อนค้นข้อความ; `<textarea>` ใน SSR ว่างเสมอ (Editor เป็น uncontrolled
+  แล้ว sync ค่าเองตอน mount) — อย่า assert เนื้อหา textarea จาก SSR
 
 ส่วน `src/lib/*.js` ทดสอบตรง ๆ ด้วย node ได้ (`scripts/check-lib.mjs` ทำให้แล้ว) ถ้าจะเขียนเทสต์ชั่วคราวเอง
 ต้องแก้ import ให้มีนามสกุล `.js` ก่อน เพราะโค้ดจริงพึ่งการ resolve ของ vite เช่น
@@ -65,7 +66,7 @@ label สองภาษา (ไทยหลัก + อังกฤษ mono ต
 
 ### Shell (`src/components/shell/`)
 
-`AppShell` = `TopBar` (brand · `DocTabs` · ปุ่ม ⌘K · `LangSwitch` TH/EN · ธีม) / `ToolRail` 56px · เนื้อหา ·
+`AppShell` = `TopBar` (brand · `DocTabs` (จุดสถานะ parse เองต่อ doc; doc > 256 KB คิดใหม่หลังหยุดพิมพ์ 400 ms) · ปุ่ม ⌘K · `LangSwitch` TH/EN · ธีม) / `ToolRail` 56px · เนื้อหา ·
 options 236px (`OptionsPanel` + `OptionGroup`; < 1120px กลายเป็น `OptionsDrawer` — เฟรม mock 1120 ยังเห็น panel) / `StatusStrip`
 หน้าใน `src/pages/` ส่งเนื้อหาเข้า options panel และ status strip ผ่าน portal slot `<OptionsSlot>` / `<StatusSlot>`
 (`shell/slots.jsx`) — ไม่ lift state ขึ้น App; ตอน SSR ไม่มี container จะเรนเดอร์ว่าง ไม่พัง
@@ -152,9 +153,13 @@ result/output ที่หน้าถืออยู่ แล้วได้ o
 
 ### คอมโพเนนต์ที่ใช้ร่วมกัน (`src/components/`)
 
-- `Editor` — textarea + เลขบรรทัด (gutter `aria-hidden`) + ไฮไลต์บรรทัดที่ผิด + drag & drop ไฟล์ (กรอบ dashed ระหว่างลาก);
+- `Editor` — textarea **uncontrolled** (React controlled เขียน text content ทั้งก้อนทุก render) sync `value` ลง DOM เอง
+  เมื่อเปลี่ยนจากภายนอก; เกิน 512 KB หรือ 8,000 บรรทัด → โหมดตัวอย่าง (แสดง 64 KB แรก `readOnly` + แถบแจ้ง) เพราะ
+  `<textarea>` ของเบราว์เซอร์ layout ทั้งก้อนทุกคีย์ (~20 µs/บรรทัด) — ผลลัพธ์/คัดลอก/ดาวน์โหลดยังใช้ทั้งก้อน;
+  + เลขบรรทัด (gutter `aria-hidden`) + ไฮไลต์บรรทัดที่ผิด + drag & drop ไฟล์ (กรอบ dashed ระหว่างลาก);
   `ref.focusLine(n)` (ปุ่ม "ไปที่บรรทัด"), prop `dense` (Diff) / `wrap` (Unwrap) / `label` (aria-label — ต้องส่งเสมอ)
-- `CodeView` (ระบายสีด้วย `tokenize()` จาก `json.js`), `JsonTree` (พับ/ขยาย, pill นับรายการตาม lang)
+- `CodeView` (ระบายสีด้วย `tokenize()` จาก `json.js`; เกิน 2,000 บรรทัดเรนเดอร์เฉพาะบรรทัดที่มองเห็น — tokenize ต่อบรรทัด
+  ให้ผลเท่ากับทั้งก้อนเพราะสตริง JSON ข้ามบรรทัดไม่ได้), `JsonTree` (พับ/ขยาย, pill นับรายการตาม lang)
 - `ErrorCard` — การ์ด error แบบ 1b `{ title, message, line, column, onGoTo, onFix, children }` `role="alert"`;
   Formatter วางใต้ source pane, Unwrap วางในฝั่งผลลัพธ์พร้อม `<pre class="peeled">`
 - `CommandPalette` — ⌘K (ดูส่วน Action)
