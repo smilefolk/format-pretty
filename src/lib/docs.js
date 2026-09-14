@@ -24,7 +24,6 @@ export const DOC_DEFAULTS = Object.freeze({
   mergeChunks: true,
   // Unwrap
   deep: true,
-  repeat: false,
   // Diff
   strategy: 'index',
   arrayKey: 'id',

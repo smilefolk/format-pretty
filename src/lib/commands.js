@@ -293,16 +293,6 @@ const STATIC = [
     run: (ctx) => ctx.set('deep', !ctx.doc.deep),
     state: (ctx) => onIf(ctx.doc.deep),
   },
-  {
-    id: 'repeat',
-    th: 'แกะซ้ำจนสุด',
-    en: 'Repeat until stable',
-    group: 'options',
-    glyph: '↻',
-    when: tool('unwrap'),
-    run: (ctx) => ctx.set('repeat', !ctx.doc.repeat),
-    state: (ctx) => onIf(ctx.doc.repeat),
-  },
 
   // ---- เครื่องมือ ----
   ...['format', 'compare', 'unwrap'].map((id) => ({

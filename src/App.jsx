@@ -173,8 +173,6 @@ export default function App() {
               setView={field('view')}
               deep={doc.deep}
               setDeep={field('deep')}
-              repeat={doc.repeat}
-              setRepeat={field('repeat')}
               notify={notify}
               sendToFormatter={sendToFormatter}
             />
