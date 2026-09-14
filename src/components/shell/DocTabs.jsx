@@ -52,6 +52,19 @@ export default function DocTabs({ docs, activeId, onActivate, onClose, onOpen, o
   const statuses = useDocStatuses(docs)
   const listRef = useRef(null)
   const [editingId, setEditingId] = useState(null)
+  // id ของ tab ที่ต้อง focus หลัง render ถัดไป (ปิดด้วยคีย์บอร์ด / จบการเปลี่ยนชื่อ — element เดิมถูก unmount)
+  const focusAfterRef = useRef(null)
+  // Escape ยกเลิกการเปลี่ยนชื่อ — Chrome ยิง blur ตอน input ถูกถอด จึงต้องกัน commit ซ้ำ
+  const cancelledRef = useRef(false)
+
+  const focusTab = (id) => listRef.current?.querySelector(`[data-id="${id}"]`)?.focus()
+
+  useEffect(() => {
+    if (!focusAfterRef.current) return
+    const id = focusAfterRef.current === 'active' ? activeId : focusAfterRef.current
+    focusAfterRef.current = null
+    focusTab(id)
+  })
 
   // tab ที่ active เลื่อนเข้ามาให้เห็นเสมอเมื่อแถบล้น
   useEffect(() => {
@@ -60,20 +73,21 @@ export default function DocTabs({ docs, activeId, onActivate, onClose, onOpen, o
       ?.scrollIntoView?.({ inline: 'nearest', block: 'nearest' })
   }, [activeId, docs.length])
 
-  // คีย์บอร์ดบน tab: ← → เลื่อน (roving tabindex), Delete/Backspace ปิด, F2 เปลี่ยนชื่อ
-  // (ปุ่ม × เป็นแค่ affordance ของเมาส์ — role=tab ห้ามมี interactive ซ้อนข้างใน)
+  // คีย์บอร์ดบน tab เท่านั้น (ไม่ใช่ปุ่ม + ที่อยู่ในกล่องเดียวกัน): ← → เลื่อน (roving tabindex),
+  // Delete/Backspace ปิด, F2 เปลี่ยนชื่อ — ปุ่ม × เป็นแค่ affordance ของเมาส์ (role=tab ห้ามมี interactive ซ้อน)
   const onKeyDown = (event) => {
-    if (editingId) return
+    if (editingId || !event.target.closest('[role="tab"]')) return
     const index = docs.findIndex((d) => d.id === activeId)
     if (index < 0) return
     if (event.key === 'Delete' || event.key === 'Backspace') {
       event.preventDefault()
+      focusAfterRef.current = 'active' // tab ที่ active หลังปิด (reducer เลือกให้)
       onClose(activeId)
       return
     }
     if (event.key === 'F2') {
       event.preventDefault()
-      if (onRename) setEditingId(activeId)
+      startRename(activeId)
       return
     }
     const step = { ArrowRight: 1, ArrowLeft: -1 }[event.key]
@@ -81,12 +95,29 @@ export default function DocTabs({ docs, activeId, onActivate, onClose, onOpen, o
     event.preventDefault()
     const next = docs[(index + step + docs.length) % docs.length]
     onActivate(next.id)
-    listRef.current?.querySelector(`[data-id="${next.id}"]`)?.focus()
+    focusTab(next.id)
+  }
+
+  const startRename = (id) => {
+    if (!onRename) return
+    cancelledRef.current = false
+    setEditingId(id)
+  }
+
+  const endRename = (id) => {
+    setEditingId(null)
+    focusAfterRef.current = id
   }
 
   const commitRename = (id, value) => {
-    setEditingId(null)
+    if (cancelledRef.current) return
+    endRename(id)
     if (onRename && value.trim()) onRename(id, value)
+  }
+
+  const cancelRename = (id) => {
+    cancelledRef.current = true
+    endRename(id)
   }
 
   // tablist ครอบเฉพาะ tab (ARIA ไม่ให้มีลูกชนิดอื่น) — ปุ่ม + เป็นพี่น้องในกล่องเลื่อนเดียวกัน
@@ -102,13 +133,14 @@ export default function DocTabs({ docs, activeId, onActivate, onClose, onOpen, o
               aria-selected={active}
               tabIndex={active ? 0 : -1}
               data-id={doc.id}
+              aria-keyshortcuts="Delete F2"
               title={t(
                 'ดับเบิลคลิกหรือ F2 เปลี่ยนชื่อ · Delete ปิด',
                 'Double-click or F2 to rename · Delete to close'
               )}
               className={active ? 'doc-tab active' : 'doc-tab'}
               onClick={() => onActivate(doc.id)}
-              onDoubleClick={() => onRename && setEditingId(doc.id)}
+              onDoubleClick={() => startRename(doc.id)}
               onAuxClick={(event) => {
                 // คลิกกลางปิด tab
                 if (event.button === 1) onClose(doc.id)
@@ -132,7 +164,7 @@ export default function DocTabs({ docs, activeId, onActivate, onClose, onOpen, o
                   onKeyDown={(event) => {
                     event.stopPropagation()
                     if (event.key === 'Enter') commitRename(doc.id, event.currentTarget.value)
-                    if (event.key === 'Escape') setEditingId(null)
+                    if (event.key === 'Escape') cancelRename(doc.id)
                   }}
                 />
               ) : (

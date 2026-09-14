@@ -19,10 +19,11 @@ function readTheme() {
 }
 
 export default function App() {
+  // toast เก็บเป็น { id, message } — แจ้งข้อความเดิมซ้ำต้องได้ node ใหม่ (live region ประกาศซ้ำ + timer นับใหม่)
   const [toast, setToast] = useState(null)
   const [theme, setTheme] = useState(readTheme)
   const [lang, setLang] = useState(readLang)
-  const notify = (message) => setToast(message)
+  const notify = (message) => setToast({ id: Date.now() + Math.random(), message })
 
   // เนื้อหาและตัวเลือกของทุกหน้าอยู่ใน doc (lib/docs.js) — เครื่องมือที่แสดงคือ tool ของ doc ที่ active
   const { docs, activeId, doc, open, close, rename, update, activate, openTool } = useDocs({
@@ -181,7 +182,11 @@ export default function App() {
 
           {/* live region อยู่ตลอด (ว่างเมื่อไม่มี toast) ให้ screen reader ประกาศข้อความใหม่ได้ */}
           <div className="toast-region" role="status" aria-live="polite">
-            {toast && <div className="toast">{toast}</div>}
+            {toast && (
+              <div className="toast" key={toast.id}>
+                {toast.message}
+              </div>
+            )}
           </div>
           <CommandPalette open={paletteOpen} onClose={closePalette} ctx={commandCtx} />
         </AppShell>

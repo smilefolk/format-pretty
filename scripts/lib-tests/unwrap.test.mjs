@@ -1,19 +1,12 @@
 import assert from 'node:assert/strict'
-import { unwrapJson, unwrapNested } from '../../.lib-tmp/unwrap.js'
-import { childPath } from '../../.lib-tmp/path.js'
+import { suite } from './_harness.mjs'
+import { unwrapJson, unwrapNested } from '../../src/lib/unwrap.js'
+import { childPath } from '../../src/lib/path.js'
+
+const { t, done } = suite('unwrap.js')
 
 const SAMPLE = `"{\\"order_id\\":\\"A-1024\\",\\"items\\":[{\\"sku\\":\\"X1\\",\\"qty\\":2},{\\"sku\\":\\"Y7\\",\\"qty\\":1}],\\"paid\\":true,\\"note\\":null}"`
 const SAMPLE_NESTED = `{"event":"order.created","ts":"2026-09-02T10:20:30Z","payload":"{\\"order_id\\":\\"A-1024\\",\\"customer\\":\\"{\\\\\\"id\\\\\\":7,\\\\\\"tier\\\\\\":\\\\\\"gold\\\\\\"}\\"}"}`
-let n = 0
-const t = (name, fn) => {
-  try {
-    fn()
-    n++
-  } catch (e) {
-    console.error('FAIL:', name)
-    throw e
-  }
-}
 
 t('path.js: childPath root $ (diff) and relative root (unwrap)', () => {
   assert.equal(childPath('$', 'a'), '$.a')
@@ -113,4 +106,4 @@ t('repeat with nothing to do → passes 1; already JSON → no fields', () => {
   const r = unwrapNested({ a: 1, b: 'x' }, { repeat: true })
   assert.deepEqual(r, { value: { a: 1, b: 'x' }, count: 0, fields: [], passes: 1 })
 })
-console.log(`unwrap.js: ${n} cases passed`)
+done()

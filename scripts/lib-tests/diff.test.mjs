@@ -1,4 +1,7 @@
 import assert from 'node:assert/strict'
+import { suite } from './_harness.mjs'
+
+const { t, done } = suite('diff.js')
 import {
   diffJson,
   diffJsonWithMeta,
@@ -6,7 +9,7 @@ import {
   toReport,
   typeLabel,
   countKeys,
-} from '../../.lib-tmp/diff.js'
+} from '../../src/lib/diff.js'
 
 const L = JSON.parse(
   `{"id":1024,"name":"Somchai","active":true,"score":87,"roles":["admin","editor"],"profile":{"city":"Bangkok","zip":"10110"},"legacyField":"ยังอยู่ในก้อนซ้าย"}`
@@ -15,16 +18,6 @@ const R = JSON.parse(
   `{"id":"1024","name":"Somchai","active":false,"score":87,"roles":["admin","viewer","billing"],"profile":{"city":"Chiang Mai","zip":"10110"},"newField":"เพิ่มเข้ามาในก้อนขวา"}`
 )
 const paths = (ds) => ds.map((d) => `${d.type} ${d.path}`)
-let n = 0
-const t = (name, fn) => {
-  try {
-    fn()
-    n++
-  } catch (e) {
-    console.error('FAIL:', name)
-    throw e
-  }
-}
 
 t('default unchanged: sample → 6 diffs in the original order, kinds on type row', () => {
   const ds = diffJson(L, R)
@@ -113,7 +106,7 @@ t(
     assert.deepEqual(ds[2].right, { id: 9, qty: 1 })
     const ds2 = diffJson(a, b, { arrayKey: 'sku' })
     assert.ok(paths(ds2).includes('added $.skus[sku="Y7"]'))
-    // "7" vs 7 are different keys
+    // 7 กับ "7" เป็นคีย์คนละตัว
     const c = diffJson({ x: [{ id: 7 }] }, { x: [{ id: '7' }] }, { arrayKey: 'id' })
     assert.deepEqual(paths(c), ['removed $.x[id=7]', 'added $.x[id="7"]'])
   }
@@ -130,7 +123,7 @@ t(
       { arrayKey: 'id' }
     )
     assert.deepEqual(mixed.fallbacks, ['$.a'])
-    // sibling keyed array still keyed while another falls back
+    // อาร์เรย์พี่น้องที่จับคู่ได้ยังจับคู่ด้วยคีย์ แม้อีกอันจะ fallback
     const m = diffJsonWithMeta(
       { ok: [{ id: 1 }, { id: 2 }], bad: [{ id: 1 }, { id: 1 }] },
       { ok: [{ id: 2 }, { id: 1 }], bad: [{ id: 1 }, { id: 1 }] },
@@ -151,18 +144,18 @@ t('5. includeEqual → leaf equal rows; summarize / toReport ignore them', () =>
   assert.deepEqual(summarize(ds), { added: 2, removed: 1, changed: 3, type: 1 })
   assert.ok(!toReport(ds).includes('$.name'))
   assert.equal(toReport(ds), toReport(diffJson(L, R)))
-  // equal rows keep document order relative to diffs
+  // แถว equal แทรกตามลำดับเอกสารร่วมกับความต่าง
   assert.deepEqual(paths(ds).slice(0, 3), ['type $.id', 'equal $.name', 'changed $.active'])
-  // empty containers are not leaves
+  // คอนเทนเนอร์ว่างไม่นับเป็นใบ
   assert.deepEqual(diffJson({ a: {}, b: [] }, { a: {}, b: [] }, { includeEqual: true }), [])
 })
 t('6. countKeys on the sample → matched 4 / total 11 (union of leaf paths)', () => {
   assert.deepEqual(countKeys(L, R), { matched: 4, total: 11 })
   assert.deepEqual(countKeys({ a: 1 }, { a: 1 }), { matched: 1, total: 1 })
   assert.deepEqual(countKeys({}, {}), { matched: 0, total: 0 })
-  // type mismatch leaf vs container: $.x (right) + $.x.a, $.x.b (left) = 3 paths
+  // ชนิดต่างกันใบ vs คอนเทนเนอร์: $.x (ขวา) + $.x.a, $.x.b (ซ้าย) = 3 path
   assert.deepEqual(countKeys({ x: { a: 1, b: 2 } }, { x: 'str' }), { matched: 0, total: 3 })
-  // key strategy counts matched pairs across reordered arrays
+  // โหมดคีย์นับคู่ที่ตรงกันแม้ลำดับในอาร์เรย์สลับ
   const a = {
       items: [
         { id: 1, v: 'a' },
@@ -191,4 +184,4 @@ t('labels: short design wording; report still lists side values', () => {
   assert.ok(r.includes('$.newField  [เฉพาะขวา]\n  ขวา: "เพิ่มเข้ามาในก้อนขวา"'))
   assert.equal(toReport([]), 'ข้อมูลสองก้อนเหมือนกันทุกประการ')
 })
-console.log(`diff.js: ${n} cases passed`)
+done()

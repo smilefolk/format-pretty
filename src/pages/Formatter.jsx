@@ -64,7 +64,7 @@ export default function Formatter({
     <>
       <div className="workbench">
         <section className="pane source">
-          <PaneHead th="ต้นฉบับ" en="Source">
+          <PaneHead id="source-head" th="ต้นฉบับ" en="Source">
             <span className="pane-meta">
               {input.split('\n').length} {t('บรรทัด', 'lines')} · {formatBytes(new Blob([input]).size)}
             </span>
@@ -76,7 +76,8 @@ export default function Formatter({
             errorLine={result.error?.line}
             onDropFile={readFile}
             onKeyDown={onKeyDown}
-            label={t('ต้นฉบับ', 'Source')}
+            labelledBy="source-head"
+            invalid={!!result.error}
             placeholder={
               'วาง JSON ที่นี่ หรือลากไฟล์มาวาง เช่น {"hello": "world"}\n' +
               'วางหลายก้อนต่อกันได้ (NDJSON หรือคั่นด้วย ,) ระบบจะรวมเป็นอาร์เรย์ให้อัตโนมัติ'

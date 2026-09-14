@@ -89,7 +89,7 @@ export default function Unwrap({
     <>
       <div className="workbench">
         <section className="pane source">
-          <PaneHead th="สตริง JSON" en="Escaped string">
+          <PaneHead id="source-head" th="สตริง JSON" en="Escaped string">
             <span className="pane-meta">
               {input.split('\n').length} {t('บรรทัด', 'lines')} · {formatBytes(new Blob([input]).size)}
             </span>
@@ -102,7 +102,8 @@ export default function Unwrap({
             errorLine={result.error?.line}
             onDropFile={readFile}
             onKeyDown={onKeyDown}
-            label={t('สตริง JSON', 'Escaped string')}
+            labelledBy="source-head"
+            invalid={!!result.error}
             placeholder={
               'วางสตริง JSON ที่นี่ เช่น "{\\"a\\":1}"\n' +
               'วางแบบไม่มีเครื่องหมายคำพูดครอบ เช่น {\\"a\\":1} ก็ได้ และรองรับการ escape ซ้อนหลายชั้น'

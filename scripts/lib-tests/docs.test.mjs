@@ -1,4 +1,7 @@
 import assert from 'node:assert/strict'
+import { suite } from './_harness.mjs'
+
+const { t, done } = suite('docs.js')
 import {
   CONTENT_LIMIT,
   activeDoc,
@@ -9,18 +12,8 @@ import {
   latestDocForTool,
   nextDocName,
   serializeDocs,
-} from '../../.lib-tmp/docs.js'
+} from '../../src/lib/docs.js'
 
-let n = 0
-const t = (name, fn) => {
-  try {
-    fn()
-    n++
-  } catch (e) {
-    console.error('FAIL:', name)
-    throw e
-  }
-}
 const r = docsReducer
 
 t('initial state: one blank doc of the tool, active, recent', () => {
@@ -109,4 +102,4 @@ t('serialize / deserialize round-trip; tooLarge keeps metadata only; bad input â
   const shrunk = r(back, { type: 'update', id: big.id, patch: { input: 'small' } })
   assert.equal(JSON.parse(serializeDocs(shrunk)).docs[1].input, 'small')
 })
-console.log(`docs.js: ${n} cases passed`)
+done()
