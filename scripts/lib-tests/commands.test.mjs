@@ -34,7 +34,6 @@ const mkCtx = (doc, extra = {}) => {
       arrayKey: 'id',
       showEqual: false,
       deep: true,
-      repeat: false,
       ...doc,
     },
     docs: [],
@@ -106,13 +105,12 @@ t('when: compare shows swap/copy-report/strategy/show-equal, hides format-only',
   ])
     assert.ok(!c.includes(id), id)
 })
-t('when: unwrap shows unwrap/send/deep/repeat/indent/view/samples', () => {
+t('when: unwrap shows unwrap/send/deep/indent/view/samples', () => {
   const c = ids(listCommands(mkCtx({ tool: 'unwrap' })))
   for (const id of [
     'unwrap',
     'send-to-formatter',
     'deep',
-    'repeat',
     'indent-tab',
     'view-tree',
     'sample-unwrap',
@@ -148,10 +146,9 @@ t('state: เปิดอยู่ for current indent/view/toggles/tool/theme/la
   assert.equal(byId['tool-compare'].state(ctx), null)
   assert.equal(byId['theme'].state(ctx), ON)
   assert.equal(byId['lang'].state(ctx), ON)
-  const u = mkCtx({ tool: 'unwrap', deep: false, repeat: true })
+  const u = mkCtx({ tool: 'unwrap', deep: false })
   const ub = Object.fromEntries(listCommands(u).map((c) => [c.id, c]))
   assert.equal(ub['deep'].state(u), null)
-  assert.equal(ub['repeat'].state(u), ON)
   const c = mkCtx({ tool: 'compare', strategy: 'key', showEqual: true })
   const cb = Object.fromEntries(listCommands(c).map((x) => [x.id, x]))
   assert.equal(cb['strategy-key'].state(c), ON)

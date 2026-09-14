@@ -34,8 +34,6 @@ export default function Unwrap({
   setView,
   deep,
   setDeep,
-  repeat,
-  setRepeat,
   notify,
   sendToFormatter,
   onFileName,
@@ -49,9 +47,9 @@ export default function Unwrap({
   const nested = useMemo(
     () =>
       result.ok && deep
-        ? unwrapNested(result.value, { repeat })
-        : { value: result.value, count: 0, fields: [], passes: 1 },
-    [result, deep, repeat]
+        ? unwrapNested(result.value)
+        : { value: result.value, count: 0, fields: [] },
+    [result, deep]
   )
 
   // chain ชั้นที่แกะ: ชั้นนอก (string) ต่อด้วยฟิลด์ที่แกะได้ เรียงเลขต่อกัน
@@ -256,7 +254,6 @@ export default function Unwrap({
         <OptionsPanel th="ตั้งค่า" en="Options">
           <OptionGroup>
             <Toggle checked={deep} onChange={setDeep} th="แกะสตริงในฟิลด์ย่อย" en="Deep unwrap" />
-            <Toggle checked={repeat} onChange={setRepeat} th="แกะซ้ำจนสุด" en="Repeat until stable" />
           </OptionGroup>
           <OptionGroup th="ระยะเยื้อง" en="Indent">
             <Segmented
@@ -296,7 +293,6 @@ export default function Unwrap({
           <span className="status-danger">● FAILED</span>
         )}
         {deep && <span>DEEP</span>}
-        {repeat && nested.passes > 1 && <span>REPEAT ×{nested.passes}</span>}
         <span>UTF-8</span>
       </StatusSlot>
     </>

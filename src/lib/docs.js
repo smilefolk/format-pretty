@@ -38,7 +38,6 @@ export const DOC_DEFAULTS = Object.freeze({
   lineEnding: 'lf',
   // Unwrap
   deep: true,
-  repeat: false,
   // Diff
   strategy: 'index',
   arrayKey: 'id',

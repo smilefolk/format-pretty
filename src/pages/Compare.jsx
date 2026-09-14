@@ -300,9 +300,9 @@ export default function Compare({
                 {
                   value: 'key',
                   label: (
-                    <>
+                    <span title={`${t('จับคู่ด้วยคีย์', 'Match by key')} ${arrayKey.trim() || 'id'}`}>
                       {t('จับคู่ด้วยคีย์', 'Match by key')} <code>{arrayKey.trim() || 'id'}</code>
-                    </>
+                    </span>
                   ),
                 },
               ]}
@@ -348,8 +348,8 @@ export default function Compare({
                 </div>
               )}
               <div className="summary-keys">
-                {keys ? keys.matched : '—'} {t('คีย์ที่ตรงกัน', 'matched')} · {keys ? keys.total : '—'}{' '}
-                {t('คีย์รวม', 'total keys')}
+                {keys ? keys.matched : '—'} {t('ค่าที่ตรงกัน', 'values matched')} ·{' '}
+                {keys ? keys.total : '—'} {t('ค่ารวม', 'values total')}
               </div>
             </div>
           </OptionGroup>
@@ -362,7 +362,9 @@ export default function Compare({
         ) : total === 0 ? (
           <span className="status-ok">● IDENTICAL</span>
         ) : (
-          <span className="status-danger">● {total} DIFFS</span>
+          <span className="status-danger">
+            ● {total} {total === 1 ? 'DIFF' : 'DIFFS'}
+          </span>
         )}
         <span>{keyName ? `BY KEY ${keyName}` : 'BY INDEX'}</span>
         <span>DEEP</span>
