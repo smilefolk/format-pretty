@@ -66,7 +66,7 @@ label สองภาษา (ไทยหลัก + อังกฤษ mono ต
 ### Shell (`src/components/shell/`)
 
 `AppShell` = `TopBar` (brand · `DocTabs` · ปุ่ม ⌘K · `LangSwitch` TH/EN · ธีม) / `ToolRail` 56px · เนื้อหา ·
-options 236px (`OptionsPanel` + `OptionGroup`; < 1180px กลายเป็น `OptionsDrawer`) / `StatusStrip`
+options 236px (`OptionsPanel` + `OptionGroup`; < 1120px กลายเป็น `OptionsDrawer` — เฟรม mock 1120 ยังเห็น panel) / `StatusStrip`
 หน้าใน `src/pages/` ส่งเนื้อหาเข้า options panel และ status strip ผ่าน portal slot `<OptionsSlot>` / `<StatusSlot>`
 (`shell/slots.jsx`) — ไม่ lift state ขึ้น App; ตอน SSR ไม่มี container จะเรนเดอร์ว่าง ไม่พัง
 

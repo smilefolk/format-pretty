@@ -532,14 +532,15 @@ body {
   color: var(--danger);
 }
 
-/* --- responsive: < 1180 options panel เป็น drawer, ปุ่มเปิดโชว์เฉพาะตอนนั้น --- */
+/* --- responsive: < 1120 options panel เป็น drawer, ปุ่มเปิดโชว์เฉพาะตอนนั้น ---
+   handoff เขียน "~1180" แต่ reference frame ของ mock เอง = 1120 (มี panel) จึงตั้งให้เฟรมนั้นยังแสดง panel */
 
 /* specificity 2 ชั้นเพื่อชนะ .icon-btn { display: grid } ที่ประกาศทีหลัง */
 .icon-btn.only-narrow {
   display: none;
 }
 
-@media (max-width: 1179px) {
+@media (max-width: 1119px) {
   .icon-btn.only-narrow {
     display: grid;
   }
