@@ -179,7 +179,10 @@ export default function App() {
             />
           )}
 
-          {toast && <div className="toast">{toast}</div>}
+          {/* live region อยู่ตลอด (ว่างเมื่อไม่มี toast) ให้ screen reader ประกาศข้อความใหม่ได้ */}
+          <div className="toast-region" role="status" aria-live="polite">
+            {toast && <div className="toast">{toast}</div>}
+          </div>
           <CommandPalette open={paletteOpen} onClose={closePalette} ctx={commandCtx} />
         </AppShell>
       </ActionsContext.Provider>

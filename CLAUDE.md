@@ -8,9 +8,12 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 npm run dev      # dev server บน http://localhost:5173 (เปิดเบราว์เซอร์ให้อัตโนมัติ)
 npm run build    # build ไป dist/
 npm run preview  # เสิร์ฟ dist/ ที่ build แล้ว
+
+node scripts/check-lib.mjs    # node test ของ src/lib (json / diff / unwrap / fix / commands / docs) ไม่ต้องเปิดเบราว์เซอร์
+python3 scripts/check-css.py  # ทุก class selector ใน styles.css ต้องมี JSX ใช้ (กัน CSS ตาย)
 ```
 
-ไม่มี linter และไม่มี test runner ติดตั้งไว้
+ไม่มี linter และไม่มี test runner ติดตั้งไว้ — สคริปต์ใน `scripts/` ใช้แค่ node/python ที่มีอยู่แล้ว ไม่เพิ่ม dependency
 
 ## Verifying changes
 
@@ -35,106 +38,158 @@ npx esbuild ./__check.jsx --bundle --platform=node --format=esm --jsx=automatic 
 rm -f ./__check.jsx
 ```
 
-ข้อควรระวังตอนเขียน assertion: `renderToString` แทรก `<!-- -->` ระหว่าง text node และ escape `"`
-เป็น `&quot;` ดังนั้นให้ strip ทั้งสองอย่างก่อนค้นข้อความ
+- props ของแต่ละหน้า: `Formatter` ตามข้างบน; `Compare` = `left setLeft right setRight strategy setStrategy arrayKey
+  setArrayKey showEqual setShowEqual notify`; `Unwrap` = `input setInput indent setIndent view setView deep setDeep
+  repeat setRepeat notify sendToFormatter`; `<App />` เรนเดอร์ได้ทั้งตัว (ไม่มี localStorage ก็ไม่พัง)
+- options panel / status strip ของหน้าเรนเดอร์ผ่าน portal → ตอน SSR จะ **ไม่มี** ใน HTML (ต้องดูในเบราว์เซอร์);
+  `CommandPalette` เรนเดอร์ได้ตรง ๆ ด้วย `<CommandPalette open onClose={noop} ctx={…} />`
+- ทดสอบโหมดอังกฤษ: ครอบด้วย `<LangContext.Provider value="en">` จาก `src/lib/i18n`
+- ข้อควรระวังตอนเขียน assertion: `renderToString` แทรก `<!-- -->` ระหว่าง text node และ escape `"`
+  เป็น `&quot;` ดังนั้นให้ strip ทั้งสองอย่างก่อนค้นข้อความ
 
-ส่วน `src/lib/*.js` ทดสอบตรง ๆ ด้วย node ได้ แต่ต้องแก้ import ให้มีนามสกุล `.js` ก่อน (โค้ดจริงพึ่ง
-การ resolve ของ vite) เช่น `sed "s|from './locate'|from './locate.js'|" src/lib/json.js > /tmp/json.js`
+ส่วน `src/lib/*.js` ทดสอบตรง ๆ ด้วย node ได้ (`scripts/check-lib.mjs` ทำให้แล้ว) ถ้าจะเขียนเทสต์ชั่วคราวเอง
+ต้องแก้ import ให้มีนามสกุล `.js` ก่อน เพราะโค้ดจริงพึ่งการ resolve ของ vite เช่น
+`sed "s|from './locate'|from './locate.js'|" src/lib/json.js > /tmp/json.js`
+
+ตรวจในเบราว์เซอร์: `npm run dev` แล้วเทียบกับ mock ใน handoff (`2a` Formatter / `3a` Diff / `3b` Unwrap / `3c` ⌘K);
+ก่อน merge ที่แตะ token สี ให้รัน axe หรือ Lighthouse accessibility (เป้าหมาย 100 — เหลือได้แค่เลขบรรทัด ดู Conventions)
 
 ## Architecture
 
 เว็บแอปหน้าเดียว ไม่มี backend ไม่มี router และไม่มี dependency นอกจาก `react` / `react-dom`
-(syntax highlighting, tree view, JSON parser ทั้งหมดเขียนเอง)
+(syntax highlighting, tree view, JSON parser, diff, command palette ทั้งหมดเขียนเอง) ฟอนต์ self-host ใน `public/fonts`
+— ไม่มี request ออกนอกเครื่องเลย และต้องคงไว้แบบนี้
 
-### หัวใจของระบบคือ `parseJson()` ใน `src/lib/json.js`
+ดีไซน์คือ "Workbench" (handoff option 2a): shell เต็ม viewport, แท็บเอกสารหลายอัน, panel ตัวเลือกด้านขวา,
+label สองภาษา (ไทยหลัก + อังกฤษ mono ตัวเล็ก), ⌘K
 
-ทุกหน้าเรียกใช้ฟังก์ชันนี้ตัวเดียวกัน และคาดหวัง shape นี้:
+### Shell (`src/components/shell/`)
 
-- `{ ok: true, value, merged }` — `merged` > 1 แปลว่าอินพุตมี JSON หลายก้อนต่อกันแล้วถูกรวมเป็น array
-- `{ ok: false, empty: true }` — อินพุตว่าง
-- `{ ok: false, error: { message, line, column } }` — ข้อความ error เป็นภาษาไทย
+`AppShell` = `TopBar` (brand · `DocTabs` · ปุ่ม ⌘K · `LangSwitch` TH/EN · ธีม) / `ToolRail` 56px · เนื้อหา ·
+options 236px (`OptionsPanel` + `OptionGroup`; < 1120px กลายเป็น `OptionsDrawer` — เฟรม mock 1120 ยังเห็น panel) / `StatusStrip`
+หน้าใน `src/pages/` ส่งเนื้อหาเข้า options panel และ status strip ผ่าน portal slot `<OptionsSlot>` / `<StatusSlot>`
+(`shell/slots.jsx`) — ไม่ lift state ขึ้น App; ตอน SSR ไม่มี container จะเรนเดอร์ว่าง ไม่พัง
 
-ถ้าจะแก้ shape นี้ ต้องไล่แก้ทั้ง 3 หน้า เพราะทุกหน้าอ่าน `result.error?.line` ไปไฮไลต์บรรทัด
-และอ่าน `result.merged` ไปแสดงแถบแจ้งเตือน
+label สองภาษาใช้ `<L th en />` และ `useT()` จาก `src/lib/i18n.jsx` — โหมด `th` แสดงไทย + sub-label อังกฤษ,
+โหมด `en` แสดงอังกฤษล้วน (persist `fp-lang`) ข้อความที่เป็นสตริงล้วน (placeholder, aria-label, toast) ใช้ `t(th, en)`
 
-ลำดับการทำงาน: ลอง `JSON.parse` ทั้งก้อนก่อน (ทางเร็ว) → ถ้าไม่ผ่านค่อยเรียก `scanDocuments()`
-ตัวเลือก `parseJson(text, { merge = true })` — `merge:false` แล้วพบหลายก้อนจะคืน error ชี้ต้นก้อนที่ 2 แทนการรวม
-(Formatter ส่ง `doc.mergeChunks`; Compare / `unwrap.js` / DocTabs ของ doc อื่นเรียกแบบ default)
-
-### `src/lib/locate.js` — JSON scanner ที่เขียนเอง
-
-มีอยู่เพราะข้อความ error ของ `JSON.parse` ไม่บอกตำแหน่งในหลายกรณี (V8 คืน
-`Unexpected token ',', ..."..." is not valid JSON` เฉย ๆ ไม่มี position) จึงต้องมี recursive-descent
-scanner ของตัวเองเพื่อ (1) ระบุ index ของจุดที่ผิดจริง (2) หาขอบเขตของค่า JSON แต่ละก้อนเพื่อรวม
-NDJSON / อ็อบเจ็กต์ที่ต่อกันให้เป็น array — `scanDocuments()` คือจุดที่ทำเรื่องนี้
-
-### ไลบรารีที่ต่อยอดจาก `parseJson`
-
-- `src/lib/diff.js` — เทียบ JSON สองก้อนแบบ recursive คืนรายการ `{ path, type, left, right }`
-  โดย `type` เป็น `added` / `removed` / `changed` / `type` (+ `equal` เฉพาะใบเมื่อ `includeEqual`)
-  `diffJson(a, b, { arrayKey, includeEqual })` — อาร์เรย์เทียบตาม index เป็นค่าเริ่มต้น; ส่ง `arrayKey`
-  เพื่อจับคู่ด้วยค่าคีย์ (path `$.items[id=7]` / `$.items[sku="X1"]`) อาร์เรย์ที่จับคู่ไม่ได้ fallback เป็น index
-  เฉพาะอาร์เรย์นั้น — `diffJsonWithMeta()` คืน `{ diffs, fallbacks }` ให้ UI แสดง notice;
-  `countKeys()` นับใบที่ตรงกัน/รวม สำหรับการ์ดสรุป; `summarize()` / `toReport()` ไม่นับ `equal`
-- `src/lib/unwrap.js` — `unwrapJson()` แกะ JSON ที่ถูก escape เป็นสตริง ทีละชั้นสูงสุด 12 ชั้น รองรับทั้งแบบมีและ
-  ไม่มีเครื่องหมายคำพูดครอบ คืน `layers` (ตัวเลข) + `peels[{ n, where:'string' }]`; `unwrapNested(value, { repeat })`
-  แกะสตริง JSON ที่ซ่อนอยู่ในฟิลด์ย่อย คืน `{ value, count, fields[{ path, depth }], passes }` — หนึ่งรอบแกะ
-  สตริง→อ็อบเจ็กต์จนสุด แต่สตริง→สตริง (escape ซ้อน) แกะทีละชั้น `repeat:true` วนจนนิ่ง (≤ 8 รอบ)
-- `src/lib/fix.js` — `fixJson(text)` แก้ JSON แบบกลไกจากตำแหน่ง error ของ `parseJson` (จุลภาคท้าย / จุลภาคซ้ำ /
-  single quote / คีย์ไม่มี quote) re-parse ยืนยันทุกรอบ ≤ 5 รอบ คืน `{ fixed, applied[] }` หรือ `null` — Formatter
-  โชว์ปุ่ม "แก้ให้อัตโนมัติ" เฉพาะเมื่อได้ผล และไม่ apply เอง (D7)
-- `src/lib/path.js` — `childPath(path, key)` สร้าง path `$.a[0]["k y"]` ใช้ร่วมกันใน `diff.js` (root `$`) และ
-  `unwrap.js` (root `''`)
-
-### State ของเนื้อหาอยู่ใน "เอกสาร" (`src/lib/docs.js` + `src/hooks/useDocs.js`)
+### State อยู่ใน "เอกสาร" (`src/lib/docs.js` + `src/hooks/useDocs.js`)
 
 `App` ถือ `docs[]` + `activeId` ผ่าน `useDocs()` — หนึ่ง tab = เอกสารของเครื่องมือหนึ่ง (`doc.tool` เป็น
-`format` / `compare` / `unwrap`) เนื้อหา (`input`, `left`/`right`) และตัวเลือก (`indent`, `sortKeys`, `view`,
-`mergeChunks`, `deep`, `repeat`, `strategy`, `arrayKey`, `showEqual`) เป็นของแต่ละ doc `App` ส่งลงหน้าเป็น
-props รูป `value` / `setValue` (setter = `update(doc.id, { key })`) หน้าใน `src/pages/` จึงไม่ควรเก็บ state
-ของอินพุตเอง (state เฉพาะ UI เช่นตัวกรอง เก็บในหน้าได้) แต่ละหน้าถูก `key={doc.id}` ให้ได้ instance ใหม่ต่อ doc
+`format` / `compare` / `unwrap`, D1) เนื้อหา (`input`, `left`/`right`) และตัวเลือกทั้งหมด (`indent`, `sortKeys`, `view`,
+`mergeChunks`, `deep`, `repeat`, `strategy`, `arrayKey`, `showEqual`) เป็นของแต่ละ doc (D8 — `indent`/`view` ไม่แชร์
+ระหว่างเครื่องมือแล้ว) `App` ส่งลงหน้าเป็น props รูป `value` / `setValue` (setter = `update(doc.id, { key })`)
+หน้าจึงไม่เก็บ state ของอินพุต/ตัวเลือกเอง (state เฉพาะ UI เช่นตัวกรอง/คำค้นในหน้า Diff เก็บในหน้าได้)
+แต่ละหน้าถูก `key={doc.id}` ให้ได้ instance ใหม่ต่อ doc
 
 reducer ใน `lib/docs.js` เป็น pure function ทดสอบด้วย node ได้ตรง ๆ; persist ลง `localStorage['fp-docs']`
-(debounce 300 ms, doc ที่เนื้อหารวม > 1 MB เก็บแต่ metadata + ธง `tooLarge`) อยู่ใน hook เท่านั้น
-state ระดับแอปที่ไม่อยู่ต่อเอกสาร: `theme` (`fp-theme`), `lang` (`fp-lang`), `toast`
+(debounce 300 ms, doc ที่เนื้อหารวม > 1 MB เก็บแต่ metadata + ธง `tooLarge`, quota เต็มแจ้งครั้งเดียว) อยู่ใน hook เท่านั้น
+state ระดับแอปที่ไม่อยู่ต่อเอกสาร: `theme` (`fp-theme`), `lang` (`fp-lang`), `toast`, `paletteOpen`
 
-เครื่องมือที่แสดงคือ `doc.tool` ของ doc ที่ active — คลิก rail = กลับไป doc ล่าสุดของเครื่องมือนั้น
-(`openTool`) หรือสร้างใหม่ถ้ายังไม่มี; `sendToFormatter` = เปิด doc `format` ใหม่พร้อมเนื้อหา
+เครื่องมือที่แสดงคือ `doc.tool` ของ doc ที่ active — คลิก rail = กลับไป doc ล่าสุดของเครื่องมือนั้น (`openTool`, MRU)
+หรือสร้างใหม่ถ้ายังไม่มี; `sendToFormatter` = เปิด doc `format` ใหม่ชื่อ "จาก unwrap" พร้อมเนื้อหา
 
-เครื่องมือใหม่ = เพิ่มไฟล์ใน `src/pages/` + เพิ่มใน `TOOLS` (`components/shell/ToolRail.jsx`) และ
-`DOC_TOOLS` (`lib/docs.js`) + เพิ่มบล็อก `{doc.tool === '<ชื่อ>' && …}` ใน `App.jsx` + hook action ใน
-`hooks/useActions.js` + คำสั่งใน `lib/commands.js`
+### หน้า (`src/pages/`)
+
+ทุกหน้าเรนเดอร์ชิดขอบใน `.shell-content` ไม่มี toolbar ระดับหน้า — ปุ่มอยู่ใน action bar ใต้ pane (`.action-bar`)
+ส่วนตัวเลือกอยู่ใน options panel และตัวเลขสถานะอยู่ใน status strip
+
+- `Formatter` — `.workbench` grid 1fr 1fr: source (Editor + `ErrorCard` + action bar จัดรูปแบบ/ย่อ/เปิดไฟล์/ล้าง) ·
+  output (Badge + CodeView/JsonTree); panel: indent / sortKeys / mergeChunks / view / StatGrid
+- `Compare` — `.compare-page`: แถวอินพุต 154px (Editor `dense` ×2, สลับซ้าย–ขวา) · header (Badge จำนวน, ค้นหา path,
+  คัดลอกรายงาน) · แถว diff คอลัมน์คงที่ (คลิก/Enter คัดลอก path); panel: ตัวกรอง / strategy index|key + ชื่อคีย์ /
+  showEqual / การ์ดสรุป; วางสองก้อนในช่องซ้ายช่องเดียว = autoSplit
+- `Unwrap` — `.workbench`: Editor `wrap` + การ์ด chain "ชั้นที่แกะได้" + action bar (แกะสตริง ⌘↵ = เขียนผลทับช่องซ้าย
+  ตาม D5, ตัวอย่าง, ล้าง) · ผลลัพธ์ + แถบล่างส่งไปหน้าจัดรูปแบบ; panel: deep / repeat / indent / view / StatGrid
 
 ### Action และ command palette (`src/hooks/useActions.js` + `src/lib/commands.js`)
 
 หน้าไม่เขียน handler เอง — เรียก `useFormatterActions()` / `useCompareActions()` / `useUnwrapActions()` ด้วย
 result/output ที่หน้าถืออยู่ แล้วได้ object ของ action (`format`, `minify`, `copy`, …) ไปผูกปุ่ม จากนั้น
-`usePublishActions(actions)` ลงทะเบียนเข้า `ActionsContext` (ref ที่ `App` ถือ) — ⌘K (`components/CommandPalette.jsx`)
-เรียก `listCommands(ctx)` จาก `lib/commands.js` ซึ่ง `run(ctx)` ไปเรียก `ctx.actions.<ชื่อ>` ตัวเดียวกับปุ่ม
-คำสั่งมี `when(ctx)` ซ่อนตาม tool และ `state(ctx)` คืน `'เปิดอยู่'` สำหรับตัวเลือกที่เปิดอยู่; `ctx` สร้างใน `App`
-(`commandCtx`: doc, docs, actions (getter อ่าน ref สด), set, openTool, newDoc, closeDoc, activateDoc, theme, lang)
-ตัวอย่างข้อมูลทุกหน้าอยู่ `lib/samples.js` (D4: เรียกจาก palette; หน้า Unwrap มีปุ่มสลับตัวอย่างด้วย)
+`usePublishActions(actions)` ลงทะเบียนเข้า `ActionsContext` (ref ที่ `App` ถือ ไม่ re-render) — ⌘K
+(`components/CommandPalette.jsx`) เรียก `listCommands(ctx)` จาก `lib/commands.js` ซึ่ง `run(ctx)` ไปเรียก
+`ctx.actions.<ชื่อ>` **ตัวเดียวกับปุ่ม** จึงไม่มี logic ซ้ำสองที่ helper ร่วม (`copyText`, `downloadText`,
+`readTextFile`) ก็อยู่ในไฟล์นี้
 
-### Shell (`src/components/shell/`)
+คำสั่ง = `{ id, th, en, group, glyph, keys?, when?(ctx), run(ctx), state?(ctx) → 'เปิดอยู่' | null }` กลุ่ม
+เอกสาร / ตั้งค่า / เครื่องมือ / ทั่วไป; `when` ซ่อนตามเครื่องมือ (เช่น `fix` โชว์เฉพาะเมื่อ `actions.fix` มีค่า);
+คำสั่งสลับเอกสารสร้าง dynamic จาก `docs`; `ctx` สร้างใน `App` (`commandCtx`: doc, docs, actions (getter อ่าน ref สด
+เพราะหน้าลงทะเบียนหลัง App render), set, openTool, newDoc, closeDoc, activateDoc, theme, toggleTheme, lang, setLang)
+`searchCommands()` ค้นทั้ง th/en แบบ substring เรียงตามตำแหน่งที่พบ ตัวอย่างข้อมูลทุกหน้าอยู่ `lib/samples.js`
+(D4: ตัวอย่างเรียกจาก ⌘K; หน้า Unwrap มีปุ่มสลับตัวอย่างด้วยตาม mock)
 
-`AppShell` = TopBar (brand · `DocTabs` · ⌘K · TH/EN · ธีม) / ToolRail 56px · เนื้อหา · options 236px /
-StatusStrip หน้าส่งเนื้อหาเข้า options panel และ status strip ผ่าน portal slot
-`<OptionsSlot>` / `<StatusSlot>` (`shell/slots.jsx`) — ตอน SSR ไม่มี container จะเรนเดอร์ว่าง ไม่พัง
-label สองภาษาใช้ `<L th en />` จาก `src/lib/i18n.jsx` (โหมด `en` ซ่อน sub-label)
+### ไลบรารี (`src/lib/`)
+
+**`parseJson()` ใน `json.js` คือหัวใจ** — ทุกหน้า, `unwrap.js`, `fix.js` และจุดสถานะใน `DocTabs` เรียกตัวเดียวกัน
+และคาดหวัง shape นี้ (ถ้าจะแก้ต้องไล่ทุกที่):
+
+- `{ ok: true, value, merged }` — `merged` > 1 แปลว่าอินพุตมี JSON หลายก้อนต่อกันแล้วถูกรวมเป็น array
+- `{ ok: false, empty: true }` — อินพุตว่าง
+- `{ ok: false, error: { message, line, column } }` — ข้อความ error เป็นภาษาไทย (`line`/`column` อาจไม่มี
+  ถ้า scanner ของเราไม่เจอแล้วใช้ข้อความจากเบราว์เซอร์แทน)
+
+ลำดับการทำงาน: ลอง `JSON.parse` ทั้งก้อนก่อน (ทางเร็ว) → ถ้าไม่ผ่านค่อยเรียก `scanDocuments()` ใน `locate.js`
+ตัวเลือก `parseJson(text, { merge = true })` — `merge:false` แล้วพบหลายก้อนจะคืน error ชี้ต้นก้อนที่ 2 แทนการรวม
+(Formatter ส่ง `doc.mergeChunks`; ที่อื่นเรียกแบบ default)
+
+- `locate.js` — recursive-descent scanner ที่เขียนเอง เพราะข้อความ error ของ `JSON.parse` ไม่บอกตำแหน่งในหลายกรณี
+  (V8 คืน `Unexpected token ',', ..."..." is not valid JSON` เฉย ๆ) ใช้ (1) ระบุ index ของจุดที่ผิดจริง
+  (2) หาขอบเขตของค่า JSON แต่ละก้อนเพื่อรวม NDJSON / อ็อบเจ็กต์ที่ต่อกัน — `scanDocuments()`
+- `diff.js` — `diffJson(a, b, { arrayKey, includeEqual })` คืนรายการ `{ path, type, left, right }` โดย `type` เป็น
+  `added` / `removed` / `changed` / `type` (+ `equal` เฉพาะใบเมื่อ `includeEqual`); อาร์เรย์เทียบตาม index เป็นค่าเริ่มต้น
+  ส่ง `arrayKey` เพื่อจับคู่ด้วยค่าคีย์ (path ตาม D6 `$.items[id=7]` / `$.items[sku="X1"]`) อาร์เรย์ที่จับคู่ไม่ได้
+  (มี primitive/คีย์หาย/คีย์ซ้ำ) fallback เป็น index เฉพาะอาร์เรย์นั้น — `diffJsonWithMeta()` คืน `{ diffs, fallbacks }`
+  ให้ UI แสดง notice; `countKeys()` นับใบที่ตรงกัน/รวม (นิยาม leaf path — ดู #55); `summarize()` / `toReport()` ไม่นับ `equal`
+- `unwrap.js` — `unwrapJson()` แกะ JSON ที่ถูก escape เป็นสตริงทีละชั้น ≤ 12 ชั้น รองรับทั้งแบบมีและไม่มีเครื่องหมายคำพูดครอบ
+  คืน `layers` (ตัวเลข) + `peels[{ n, where:'string' }]`; `unwrapNested(value, { repeat })` แกะสตริง JSON ในฟิลด์ย่อย
+  คืน `{ value, count, fields[{ path, depth }], passes }` — หนึ่งรอบแกะสตริง→อ็อบเจ็กต์จนสุด แต่สตริง→สตริง (escape ซ้อน)
+  แกะทีละชั้น `repeat:true` วนจนนิ่ง ≤ 8 รอบ (semantics นี้อยู่ระหว่างเคาะใน #56)
+- `fix.js` — `fixJson(text)` แก้ JSON แบบกลไกจากตำแหน่ง error ของ `parseJson` (จุลภาคท้าย / จุลภาคซ้ำ / single quote /
+  คีย์ไม่มี quote) re-parse ยืนยันทุกรอบ ≤ 5 รอบ คืน `{ fixed, applied[] }` หรือ `null` — ห้ามคืนข้อความที่ parse ไม่ผ่าน;
+  Formatter โชว์ปุ่ม "แก้ให้อัตโนมัติ" เฉพาะเมื่อได้ผล (input ≤ 256 KB) และไม่ apply เอง (D7)
+- `path.js` — `childPath(path, key)` สร้าง path `$.a[0]["k y"]` ใช้ร่วมกันใน `diff.js` (root `$`) และ `unwrap.js` (root `''`)
+- `docs.js` / `commands.js` / `samples.js` / `constants.js` (`INDENT_OPTIONS`, `VIEW_OPTIONS`) / `i18n.jsx` — ดูข้างบน
 
 ### คอมโพเนนต์ที่ใช้ร่วมกัน (`src/components/`)
 
-`Editor` (textarea + เลขบรรทัด + ไฮไลต์บรรทัดที่ผิด + drag & drop ไฟล์; `ref.focusLine(n)`, prop `dense` / `wrap`),
-`CodeView` (ระบายสีด้วย `tokenize()` จาก `json.js`), `JsonTree` (มุมมองพับ/ขยาย), `ErrorCard` (การ์ด error
-ใต้ source pane: chip line:column + ปุ่มไปที่บรรทัด) — ตัวเลือก indent/view ที่ใช้ร่วมกันอยู่ใน `lib/constants.js`
+- `Editor` — textarea + เลขบรรทัด (gutter `aria-hidden`) + ไฮไลต์บรรทัดที่ผิด + drag & drop ไฟล์ (กรอบ dashed ระหว่างลาก);
+  `ref.focusLine(n)` (ปุ่ม "ไปที่บรรทัด"), prop `dense` (Diff) / `wrap` (Unwrap) / `label` (aria-label — ต้องส่งเสมอ)
+- `CodeView` (ระบายสีด้วย `tokenize()` จาก `json.js`), `JsonTree` (พับ/ขยาย, pill นับรายการตาม lang)
+- `ErrorCard` — การ์ด error แบบ 1b `{ title, message, line, column, onGoTo, onFix, children }` `role="alert"`;
+  Formatter วางใต้ source pane, Unwrap วางในฝั่งผลลัพธ์พร้อม `<pre class="peeled">`
+- `CommandPalette` — ⌘K (ดูส่วน Action)
+- `ui/` primitives: `Badge` (`ok` / `danger` / `neutral` + ชนิด diff), `IconButton`, `KeyCap`, `PaneHead`, `Segmented`
+  (radiogroup + ลูกศร), `StatGrid`, `Toggle` (`aria-pressed`)
 
-ทุกหน้าเรนเดอร์ชิดขอบใน `.shell-content` (Formatter / Unwrap ใช้ `.workbench` grid 1fr 1fr, Compare ใช้ `.compare-page`)
-และมี action bar ของตัวเองใต้ pane (`.action-bar`) — ไม่มี toolbar ระดับหน้าแล้ว
+### เพิ่มเครื่องมือใหม่
+
+เพิ่มไฟล์ใน `src/pages/` (ใช้ `OptionsSlot`/`StatusSlot`, primitives ใน `ui/`, `Editor` พร้อม `label`) + เพิ่มใน `TOOLS`
+(`shell/ToolRail.jsx`) และ `DOC_TOOLS` + ฟิลด์ตัวเลือกใน `DOC_DEFAULTS` (`lib/docs.js`) + บล็อก `{doc.tool === '<ชื่อ>' && …}`
+ใน `App.jsx` + hook action ใน `hooks/useActions.js` + คำสั่งใน `lib/commands.js` + ตัวอย่างใน `lib/samples.js`
+
+## การตัดสินใจด้านดีไซน์ (D1–D8 ใน issue #3, เคาะแล้ว)
+
+D1 ทุกเครื่องมือมี tab เอกสาร (doc มี `tool`) · D2 ฟอนต์ self-host ใน `public/fonts` (OFL) ไม่ใช้ Google Fonts ·
+D3 `sortKeys` default ปิด (เรียงคีย์เปลี่ยนลำดับข้อมูลผู้ใช้) · D4 ปุ่ม "ตัวอย่าง" ไปอยู่ใน ⌘K (Unwrap คงปุ่มตาม mock) ·
+D5 "แกะสตริง ⌘↵" เขียนผลทับช่องซ้าย · D6 path จับคู่ด้วยคีย์ = `$.items[id=7]` · D7 auto-fix ทำท้ายสุดและไม่ auto-apply ·
+D8 `indent`/`view` แยกต่อเอกสาร งานตามหลังนอก epic อยู่ใน issue #52–#59
 
 ## Conventions
 
-- ข้อความ UI และคอมเมนต์เป็นภาษาไทยทั้งหมด รวมถึงข้อความ error ที่ผู้ใช้เห็น
-- สไตล์อยู่ใน `src/styles.css` ไฟล์เดียว ใช้ CSS variable ล้วน ไม่มี CSS framework
-  ธีมสลับด้วย `document.documentElement.dataset.theme` (`dark` / `light`) — สีใหม่ทุกสีต้อง
-  ประกาศทั้งใน `:root` และ `:root[data-theme='light']`
-- ห้ามเพิ่ม dependency ถ้าเลี่ยงได้ ทุกอย่างทำงานฝั่งเบราว์เซอร์ ไม่มีการส่งข้อมูลออกนอกเครื่อง
+- ข้อความ UI และคอมเมนต์เป็นภาษาไทยทั้งหมด รวมถึงข้อความ error ที่ผู้ใช้เห็น; label ที่มีคู่อังกฤษใช้ `<L>` / `t()`
+- สไตล์อยู่ใน `src/styles.css` ไฟล์เดียว ใช้ CSS variable ล้วน ไม่มี CSS framework ห้าม hardcode สีในกฎ —
+  ธีมสลับด้วย `document.documentElement.dataset.theme` (`dark` / `light`) สีใหม่ทุกสีต้องประกาศทั้งใน `:root`
+  และ `:root[data-theme='light']` (alias ที่อ้าง token อื่นเช่น `--diff-*` ประกาศครั้งเดียวได้) token ตามตาราง
+  ใน handoff README; ธีมสว่างเป็นค่าที่ตีความเองและปรับให้ผ่าน contrast แล้ว
+- Contrast (ตัดสินใจใน #37): ข้อความทุกอย่างที่ไม่ใช่ "เสริม" ต้อง ≥ 4.5:1 บนพื้นของมันทั้งสองธีม —
+  `--muted-2` / `--muted-3` ถูกยกจาก spec (3.9 / 3.2:1) เป็น `#7f848d` / `#7a7f88` (dark);
+  ยกเว้นโดยตั้งใจ: เลขบรรทัด (`--faint`, gutter เป็น `aria-hidden`) และ placeholder (`--disabled`) ~2:1
+  ข้อความบน `--panel-2` (pill/chip/badge neutral) ต้องใช้ `--muted-2` ขึ้นไป ไม่ใช่ `--muted-3` (4.4:1 ไม่ถึง)
+  ตรวจด้วย axe/Lighthouse ก่อน merge ทุกครั้งที่แตะ token
+- Accessibility: ทุกจุดที่โต้ตอบได้ต้องมี focus ring (global `:focus-visible` มินต์ — อย่าใส่ `outline: none` ยกเว้นมี
+  การแสดง focus แบบอื่นแทน เช่น `.editor:focus-within`), ปุ่มไอคอนต้องมี `aria-label` ที่ขึ้นต้นด้วยข้อความที่มองเห็น,
+  `role="tab"` ห้ามมี interactive ซ้อน (ปุ่ม × เป็น `aria-hidden` และมี Delete/F2 แทน), toast อยู่ใน live region ถาวร
+- ห้ามเพิ่ม dependency ถ้าเลี่ยงได้ ทุกอย่างทำงานฝั่งเบราว์เซอร์ ไม่มีการส่งข้อมูลออกนอกเครื่อง (ฟอนต์ self-host,
+  ไม่มี analytics) — ตรวจด้วย DevTools Network ว่าไม่มี request ออกนอก origin
+- โค้ดไม่ได้จัดรูปแบบด้วย prettier สม่ำเสมอ: ไฟล์ใหม่จัดด้วย `--no-semi --single-quote --print-width 100
+  --trailing-comma es5` ได้ แต่อย่า `--write` ทับไฟล์เดิม (diff จะปนกับการจัดรูปแบบ) แตะเฉพาะบรรทัดที่เกี่ยว

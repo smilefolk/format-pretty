@@ -76,6 +76,7 @@ export default function Formatter({
             errorLine={result.error?.line}
             onDropFile={readFile}
             onKeyDown={onKeyDown}
+            label={t('ต้นฉบับ', 'Source')}
             placeholder={
               'วาง JSON ที่นี่ หรือลากไฟล์มาวาง เช่น {"hello": "world"}\n' +
               'วางหลายก้อนต่อกันได้ (NDJSON หรือคั่นด้วย ,) ระบบจะรวมเป็นอาร์เรย์ให้อัตโนมัติ'

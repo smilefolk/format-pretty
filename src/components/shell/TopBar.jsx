@@ -20,7 +20,7 @@ export default function TopBar({
         <span className="top-bar-logo" aria-hidden="true">
           FP
         </span>
-        <span className="top-bar-wordmark">FormatPritty</span>
+        <h1 className="top-bar-wordmark">FormatPritty</h1>
       </div>
 
       <div className="top-bar-tabs">{children}</div>

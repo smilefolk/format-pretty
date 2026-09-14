@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef } from 'react'
 
-// container ของ options panel — จอกว้างเป็นคอลัมน์ขวาปกติ, จอแคบ (<1180) เป็น drawer ทับเนื้อหา
+// container ของ options panel — จอกว้างเป็นคอลัมน์ขวาปกติ, จอแคบ (<1120) เป็น drawer ทับเนื้อหา
 // เปิดแล้วย้าย focus เข้าไป ปิดด้วย Esc / คลิก scrim แล้วคืน focus ให้ปุ่มที่เปิด
 export default function OptionsDrawer({ open, onClose, returnFocusTo, containerRef, hasOptions }) {
   const panelRef = useRef(null)

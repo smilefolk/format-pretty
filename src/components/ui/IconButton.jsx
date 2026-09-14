@@ -11,7 +11,7 @@ const IconButton = forwardRef(function IconButton({ label, className, children, 
       title={label}
       {...rest}
     >
-      {children}
+      <span aria-hidden="true">{children}</span>
     </button>
   )
 })

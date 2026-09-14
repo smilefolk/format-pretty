@@ -72,8 +72,9 @@
   --text-2: #c8ccd2;
   --code-ink: #b9bdc4;
   --muted: #8a8e96;
-  --muted-2: #6b7078;
-  --muted-3: #5d626b;
+  /* muted-2/3 ยกจาก spec (#6b7078 / #5d626b = 3.9:1 / 3.2:1) ให้ถึง AA 4.5:1 บน chrome — ดู #37 */
+  --muted-2: #7f848d;
+  --muted-3: #7a7f88;
   --faint: #3d424a;
   --disabled: #41464e;
 
@@ -111,23 +112,23 @@
   --text: #17181a;
   --text-2: #3c3f44;
   --code-ink: #2f3238;
-  --muted: #6a6c70;
-  --muted-2: #8a8c90;
-  --muted-3: #a09c94;
+  --muted: #5f6166;
+  --muted-2: #67696e;
+  --muted-3: #6b6e73;
   --faint: #bfbab0;
   --disabled: #aaa59c;
 
-  --accent: #0f766e;
+  --accent: #0b6b63;
   --accent-ink: #f7f5f0;
-  --danger: #c0563a;
-  --danger-soft: #a8432b;
+  --danger: #a8432b;
+  --danger-soft: #9f3f28;
 
-  --tok-key: #0f766e;
+  --tok-key: #0d6b64;
   --tok-string: #1d4ed8;
-  --tok-number: #b45309;
-  --tok-boolean: #7c3aed;
+  --tok-number: #984905;
+  --tok-boolean: #6d2fd6;
   --tok-null: #be123c;
-  --tok-punct: #7d8086;
+  --tok-punct: #6b6e74;
 
   --shadow-overlay: 0 12px 32px rgba(23, 24, 26, 0.1);
 }
@@ -143,7 +144,6 @@
 }
 
 button,
-select,
 input,
 textarea {
   transition: border-color 0.15s, background 0.15s;
@@ -226,6 +226,7 @@ body {
 }
 
 .top-bar-wordmark {
+  margin: 0;
   font: 600 13px/1 var(--font-ui);
   letter-spacing: -0.2px;
   color: var(--text);
@@ -282,6 +283,13 @@ body {
   overflow-x: auto;
   overflow-y: hidden;
   scrollbar-width: none;
+}
+
+.doc-tab-list {
+  display: flex;
+  align-items: flex-end;
+  gap: 1px;
+  flex: none;
 }
 
 .doc-tabs::-webkit-scrollbar {
@@ -524,14 +532,15 @@ body {
   color: var(--danger);
 }
 
-/* --- responsive: < 1180 options panel เป็น drawer, ปุ่มเปิดโชว์เฉพาะตอนนั้น --- */
+/* --- responsive: < 1120 options panel เป็น drawer, ปุ่มเปิดโชว์เฉพาะตอนนั้น ---
+   handoff เขียน "~1180" แต่ reference frame ของ mock เอง = 1120 (มี panel) จึงตั้งให้เฟรมนั้นยังแสดง panel */
 
 /* specificity 2 ชั้นเพื่อชนะ .icon-btn { display: grid } ที่ประกาศทีหลัง */
 .icon-btn.only-narrow {
   display: none;
 }
 
-@media (max-width: 1179px) {
+@media (max-width: 1119px) {
   .icon-btn.only-narrow {
     display: grid;
   }
@@ -601,7 +610,7 @@ body {
   border: 0;
   border-radius: 5px;
   background: transparent;
-  color: var(--muted-3);
+  color: var(--muted);
   font: 500 10.5px/1.4 var(--font-mono);
   cursor: pointer;
 }
@@ -613,17 +622,6 @@ body {
 }
 
 /* ---------- controls ---------- */
-
-.toolbar {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 8px;
-  padding: 10px;
-  background: var(--panel);
-  border: 1px solid var(--border);
-  border-radius: 12px;
-}
 
 .spacer {
   flex: 1;
@@ -690,54 +688,13 @@ body {
   border-color: var(--border-strong);
 }
 
-kbd {
-  margin-left: 6px;
-  padding: 1px 5px;
-  border-radius: 4px;
-  /* อิงสีตัวอักษรปัจจุบัน จึงวางบนปุ่มมินต์หรือปุ่มธรรมดาก็ได้ (T0.4 จะแทนด้วย KeyCap) */
-  background: color-mix(in srgb, currentColor 14%, transparent);
-  font: 11px/1 var(--font-mono);
-}
-
-.field,
-.check {
-  display: flex;
-  align-items: center;
-  gap: 7px;
-  color: var(--muted);
-  font-size: 13px;
-}
-
-.check {
-  cursor: pointer;
-}
-
-select {
-  padding: 6px 8px;
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  background: var(--panel-2);
-  color: var(--text);
-  font: inherit;
-}
-
 /* ---------- panes ---------- */
 
-.panes {
-  flex: 1;
-  min-height: 0;
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 14px;
-}
-
+/* pane ชิดขอบ ไม่มีการ์ด — คั่นกันด้วยเส้น 1px จาก container (.workbench / .compare-inputs) */
 .pane {
   display: flex;
   flex-direction: column;
   min-height: 0;
-  background: var(--panel);
-  border: 1px solid var(--border);
-  border-radius: 12px;
   overflow: hidden;
 }
 
@@ -781,12 +738,6 @@ select {
   grid-template-columns: 1fr 1fr;
 }
 
-.workbench > .pane {
-  border: 0;
-  border-radius: 0;
-  background: transparent;
-}
-
 .workbench > .pane.source {
   border-right: 1px solid var(--border);
 }
@@ -800,28 +751,6 @@ select {
   padding: 9px 14px;
   border-top: 1px solid var(--border);
   background: var(--chrome);
-}
-
-.tabs {
-  display: flex;
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  overflow: hidden;
-}
-
-.tabs button {
-  padding: 4px 12px;
-  border: 0;
-  background: transparent;
-  color: var(--muted);
-  font: inherit;
-  font-size: 12.5px;
-  cursor: pointer;
-}
-
-.tabs button.active {
-  background: var(--accent);
-  color: var(--accent-ink);
 }
 
 /* ---------- editor / code ---------- */
@@ -891,6 +820,11 @@ textarea.input::placeholder {
   word-break: break-all;
 }
 
+/* focus ของ textarea แสดงเป็นกรอบมินต์บาง ๆ รอบ editor (textarea เองปิด outline เพราะกรอบจะซ้อนกับ gutter) */
+.editor:focus-within {
+  box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--accent) 55%, transparent);
+}
+
 /* ระหว่างลากไฟล์มาวาง */
 .editor.dragging {
   outline: 1.5px dashed var(--accent);
@@ -937,26 +871,6 @@ textarea.input::placeholder {
   color: var(--muted);
   font-size: 12.5px;
   text-align: center;
-}
-
-.error {
-  margin: 14px;
-  padding: 12px 14px;
-  align-self: flex-start;
-  width: 100%;
-  border: 1px solid var(--danger);
-  border-left-width: 4px;
-  border-radius: 8px;
-  background: color-mix(in srgb, var(--danger) 10%, transparent);
-}
-
-.error strong {
-  color: var(--danger);
-}
-
-.error p {
-  margin: 6px 0 0;
-  font: 13px/1.5 var(--font-mono);
 }
 
 /* การ์ด error แบบ 1b (components/ErrorCard) — ใต้ source pane เหนือ action bar */
@@ -1059,28 +973,14 @@ textarea.input::placeholder {
 .tok-boolean {
   color: var(--tok-boolean);
 }
-.tok-null,
-.tok-undefined {
+.tok-null {
   color: var(--tok-null);
 }
 .tok-punct {
   color: var(--tok-punct);
 }
 
-/* ---------- status bar ---------- */
-
-.statusbar {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 14px;
-  padding: 8px 12px;
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  background: var(--panel);
-  color: var(--muted);
-  font-size: 12.5px;
-}
+/* ---------- badge (components/ui/Badge) ---------- */
 
 .badge {
   display: inline-block;
@@ -1092,14 +992,12 @@ textarea.input::placeholder {
   white-space: nowrap;
 }
 
-.badge.ok,
-.badge.merged {
+.badge.ok {
   background: color-mix(in srgb, var(--accent) 14%, transparent);
   color: var(--accent);
 }
 
-.badge.danger,
-.badge.bad {
+.badge.danger {
   background: color-mix(in srgb, var(--danger) 14%, transparent);
   color: var(--danger);
 }
@@ -1107,11 +1005,6 @@ textarea.input::placeholder {
 .badge.neutral {
   background: var(--panel-2);
   color: var(--muted);
-}
-
-.muted {
-  color: var(--muted);
-  font-size: 12.5px;
 }
 
 /* ---------- UI primitives (components/ui) ---------- */
@@ -1389,14 +1282,15 @@ textarea.input::placeholder {
   color: var(--text);
 }
 
+/* hint: mock ใช้ --disabled (2:1) / --muted-3 — ยกเป็น --muted-3 / --muted-2 ให้ถึง 4.5:1 (#37) */
 .palette-hint {
   font: 400 10.5px/1.4 var(--font-mono);
-  color: var(--disabled);
+  color: var(--muted-3);
   white-space: nowrap;
 }
 
 .palette-row.selected .palette-hint {
-  color: var(--muted-3);
+  color: var(--muted);
 }
 
 .palette-pill {
@@ -1452,12 +1346,11 @@ textarea.input::placeholder {
 }
 
 @media (max-width: 899px) {
-  .panes,
   .workbench {
     grid-template-columns: 1fr;
   }
 
-  .pane {
+  .workbench > .pane {
     min-height: 320px;
   }
 
@@ -1569,12 +1462,6 @@ textarea.input::placeholder {
   border-bottom: 1px solid var(--border);
 }
 
-.compare-inputs > .pane {
-  border: 0;
-  border-radius: 0;
-  background: transparent;
-}
-
 .compare-inputs > .pane.source {
   border-right: 1px solid var(--border);
 }
@@ -1587,9 +1474,6 @@ textarea.input::placeholder {
 .compare-page > .diff-panel {
   flex: 1;
   min-height: 0;
-  border: 0;
-  border-radius: 0;
-  background: transparent;
 }
 
 /* ช่องค้นหาเส้นทางใน header รายการต่าง */
@@ -1790,7 +1674,7 @@ textarea.input::placeholder {
 }
 .badge.equal {
   background: var(--panel-2);
-  color: var(--muted-3);
+  color: var(--muted-2);
 }
 
 /* แถว diff แบบคอลัมน์คงที่: ชนิด / path / ชนิดที่เปลี่ยน / ค่า — แถบสัญญาณซ้าย 3px สีชนิด, แถวคู่พื้น --panel */
@@ -1830,8 +1714,9 @@ textarea.input::placeholder {
 .diff-row.added {
   --row-color: var(--diff-added);
 }
+/* แถว equal จางลง — ใช้ --muted-2 (ไม่ใช่ -3) เพราะ pill อยู่บน --panel-2 ต้องถึง 4.5:1 */
 .diff-row.equal {
-  color: var(--muted-3);
+  color: var(--muted-2);
 }
 
 .diff-row .badge {

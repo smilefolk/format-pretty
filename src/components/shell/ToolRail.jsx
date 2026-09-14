@@ -18,7 +18,7 @@ export default function ToolRail({ active, onSelect }) {
           key={tool.value}
           type="button"
           className="tool-rail-item"
-          aria-label={t(tool.th, tool.en)}
+          aria-label={`${tool.caption} · ${t(tool.th, tool.en)}`}
           aria-current={active === tool.value ? 'page' : undefined}
           title={t(tool.th, tool.en)}
           onClick={() => onSelect(tool.value)}

@@ -102,6 +102,7 @@ export default function Unwrap({
             errorLine={result.error?.line}
             onDropFile={readFile}
             onKeyDown={onKeyDown}
+            label={t('สตริง JSON', 'Escaped string')}
             placeholder={
               'วางสตริง JSON ที่นี่ เช่น "{\\"a\\":1}"\n' +
               'วางแบบไม่มีเครื่องหมายคำพูดครอบ เช่น {\\"a\\":1} ก็ได้ และรองรับการ escape ซ้อนหลายชั้น'

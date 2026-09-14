@@ -113,6 +113,7 @@ export default function Compare({
               value={left}
               onChange={setLeft}
               errorLine={leftResult.error?.line}
+              label={t('ก้อนซ้าย', 'Left')}
               placeholder={'วาง JSON ก้อนแรกที่นี่\nหรือวางสองก้อนต่อกันในช่องนี้ช่องเดียว แล้วเว้นช่องขวาไว้'}
             />
           </section>
@@ -127,6 +128,7 @@ export default function Compare({
               value={right}
               onChange={setRight}
               errorLine={rightResult.error?.line}
+              label={t('ก้อนขวา', 'Right')}
               placeholder="วาง JSON ก้อนที่สองที่นี่"
             />
           </section>
