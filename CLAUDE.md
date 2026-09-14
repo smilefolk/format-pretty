@@ -136,5 +136,10 @@ label สองภาษาใช้ `<L th en />` จาก `src/lib/i18n.jsx` 
 - ข้อความ UI และคอมเมนต์เป็นภาษาไทยทั้งหมด รวมถึงข้อความ error ที่ผู้ใช้เห็น
 - สไตล์อยู่ใน `src/styles.css` ไฟล์เดียว ใช้ CSS variable ล้วน ไม่มี CSS framework
   ธีมสลับด้วย `document.documentElement.dataset.theme` (`dark` / `light`) — สีใหม่ทุกสีต้อง
-  ประกาศทั้งใน `:root` และ `:root[data-theme='light']`
+  ประกาศทั้งใน `:root` และ `:root[data-theme='light']` (alias ที่อ้าง token อื่นเช่น `--diff-*` ประกาศครั้งเดียวได้)
+- Contrast (ตัดสินใจใน #37): ข้อความทุกอย่างที่ไม่ใช่ "เสริม" ต้อง ≥ 4.5:1 บนพื้นของมันทั้งสองธีม —
+  `--muted-2` / `--muted-3` ถูกยกจาก spec (3.9 / 3.2:1) เป็น `#7f848d` / `#7a7f88` (dark) และธีมสว่างตั้งใหม่ทั้งชุด;
+  ยกเว้นโดยตั้งใจ: เลขบรรทัด (`--faint`, gutter เป็น `aria-hidden`) และ placeholder (`--disabled`) ~2:1
+  ข้อความบน `--panel-2` (pill/chip/badge neutral) ต้องใช้ `--muted-2` ขึ้นไป ไม่ใช่ `--muted-3` (4.4:1 ไม่ถึง)
+  ตรวจด้วย axe/Lighthouse ก่อน merge ทุกครั้งที่แตะ token
 - ห้ามเพิ่ม dependency ถ้าเลี่ยงได้ ทุกอย่างทำงานฝั่งเบราว์เซอร์ ไม่มีการส่งข้อมูลออกนอกเครื่อง
