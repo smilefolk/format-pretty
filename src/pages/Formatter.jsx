@@ -189,6 +189,13 @@ export default function Formatter({
               </div>
             )}
           </div>
+          {/* แถบล่างให้สูงเท่าฝั่ง source (action bar) — pane สองฝั่งจบระดับเดียวกัน; meta ของผลลัพธ์อยู่ขวา */}
+          <div className="action-bar">
+            <div className="spacer" />
+            <span className="pane-meta">
+              {stats ? `${stats.lines} ${t('บรรทัด', 'lines')} · ${formatBytes(stats.bytes)}` : '—'}
+            </span>
+          </div>
         </section>
       </div>
 

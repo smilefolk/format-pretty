@@ -99,7 +99,8 @@ state ระดับแอปที่ไม่อยู่ต่อเอก�
 ส่วนตัวเลือกอยู่ใน options panel และตัวเลขสถานะอยู่ใน status strip
 
 - `Formatter` — `.workbench` grid 1fr 1fr: source (Editor + `ErrorCard` + action bar จัดรูปแบบ/ย่อ/เปิดไฟล์/ล้าง) ·
-  output (Badge + CodeView/JsonTree); panel: indent / sortKeys / mergeChunks / view / StatGrid
+  output (Badge + คัดลอก/ดาวน์โหลดในหัว + CodeView/JsonTree + แถบล่างมีแต่ meta บรรทัด·ไบต์ เพื่อให้สูงเท่าฝั่ง source —
+  `.action-bar` มี `min-height: 50px` ทุกแถบจึงเท่ากันไม่ว่ามีปุ่มหรือไม่); panel: indent / sortKeys / mergeChunks / view / StatGrid
 - `Compare` — `.compare-page`: แถวอินพุต 154px (Editor `dense` ×2, สลับซ้าย–ขวา) · header (Badge จำนวน, ค้นหา path,
   คัดลอกรายงาน) · แถว diff คอลัมน์คงที่ (คลิก/Enter คัดลอก path); panel: ตัวกรอง / strategy index|key + ชื่อคีย์ /
   showEqual / การ์ดสรุป; วางสองก้อนในช่องซ้ายช่องเดียว = autoSplit
