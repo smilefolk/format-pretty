@@ -1488,10 +1488,11 @@ textarea.input::placeholder {
   flex-direction: column;
 }
 
-/* แถวอินพุตสูงคงที่ 154px — pane เตี้ยจึงใช้ Editor dense */
+/* แถวอินพุตสูง ~1/3 ของจอ (mock 3a ให้ 154px คงที่ — เห็นแค่ ~5 บรรทัด เล็กไป) ล็อกขั้นต่ำให้จอเตี้ย
+   ยังเหลือที่ให้รายการต่าง และเพดานให้จอใหญ่ไม่กลืนพื้นที่; pane ยังเตี้ยกว่าหน้าอื่นจึงคง Editor dense */
 .compare-inputs {
   flex: none;
-  height: 154px;
+  height: clamp(220px, 34vh, 360px);
   display: grid;
   grid-template-columns: 1fr 1fr;
   border-bottom: 1px solid var(--border);
