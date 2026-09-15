@@ -9,6 +9,7 @@ import {
   deserializeDocs,
   docsReducer,
   initialDocsState,
+  isBlankDoc,
   isDefaultName,
   latestDocForTool,
   nextDocName,
@@ -130,5 +131,73 @@ t('serialize / deserialize round-trip; tooLarge keeps metadata only; bad input �
   // ธง tooLarge ไม่ค้าง: เนื้อหาเล็กลงแล้ว serialize ใหม่ต้องเก็บจริง
   const shrunk = r(back, { type: 'update', id: big.id, patch: { input: 'small' } })
   assert.equal(JSON.parse(serializeDocs(shrunk)).docs[1].input, 'small')
+})
+t('isBlankDoc: ไม่มีเนื้อหา + ชื่อยังเป็น default (ตัวเลือกเปลี่ยนก็ยังเปล่า)', () => {
+  const d = initialDocsState('format').docs[0]
+  assert.equal(isBlankDoc(d), true)
+  assert.equal(isBlankDoc({ ...d, indent: '4' }), true)
+  assert.equal(isBlankDoc({ ...d, input: '{}' }), false)
+  assert.equal(isBlankDoc({ ...d, left: 'x' }), false)
+  assert.equal(isBlankDoc({ ...d, right: 'x' }), false)
+  assert.equal(isBlankDoc({ ...d, name: 'orders.json' }), false)
+  // เนื้อหาไม่ได้ถูกบันทึกเพราะใหญ่เกิน — ไม่ใช่ doc เปล่า
+  assert.equal(isBlankDoc({ ...d, tooLarge: true }), false)
+})
+t('openTool: doc เปล่าที่ active เปลี่ยนเครื่องมือแทนการเด้งไป doc เดิม (#67)', () => {
+  let s = initialDocsState('format')
+  const c = createDoc('compare', { left: '1' }, s.docs)
+  s = r(s, { type: 'open', doc: c })
+  s = r(s, { type: 'activate', id: s.docs[0].id })
+  // กด + → เอกสาร 3 (format เปล่า) แล้วผู้ใช้ปรับตัวเลือกไปบ้าง
+  const blank = createDoc('format', {}, s.docs)
+  s = r(s, { type: 'open', doc: blank })
+  s = r(s, { type: 'update', id: blank.id, patch: { indent: '4' } })
+  s = r(s, { type: 'openTool', tool: 'compare' })
+  assert.equal(s.activeId, blank.id)
+  assert.equal(s.docs.length, 3)
+  const d = activeDoc(s)
+  assert.equal(d.tool, 'compare')
+  assert.equal(d.name, 'เอกสาร 3')
+  assert.equal(d.indent, '2')
+  assert.equal(s.docs.indexOf(d), 2)
+  assert.equal(s.recent[0], blank.id)
+  // เครื่องมือเดิม / เครื่องมือที่ไม่รู้จัก → ไม่เปลี่ยนอะไร (ไม่ reset ตัวเลือก)
+  s = r(s, { type: 'update', id: blank.id, patch: { strategy: 'key' } })
+  assert.equal(r(s, { type: 'openTool', tool: 'compare' }), s)
+  assert.equal(r(s, { type: 'openTool', tool: 'nope' }), s)
+})
+t('openTool: doc เปล่าที่ rail สร้างให้เอง → เปลี่ยนใจกลับเครื่องมือเดิมได้ doc เดิม ไม่ใช่ tab เปล่า', () => {
+  let s = initialDocsState('format')
+  const f1 = s.docs[0].id
+  s = r(s, { type: 'update', id: f1, patch: { input: '{}' } })
+  s = r(s, { type: 'openTool', tool: 'compare' })
+  assert.equal(s.docs.length, 2)
+  assert.equal(activeDoc(s).tool, 'compare')
+  assert.equal(activeDoc(s).name, 'เอกสาร 2')
+  const c = s.activeId
+  // c เปล่าแต่เป็น doc เดียวของ compare (ไม่ได้มาจากกด +) และ format มี f1 อยู่ → กลับไป f1
+  s = r(s, { type: 'openTool', tool: 'format' })
+  assert.equal(s.activeId, f1)
+  assert.equal(s.docs.length, 2)
+  assert.equal(s.docs[1].tool, 'compare')
+  // กลับไป DIFF → c ตาม MRU ไม่สร้างเพิ่ม
+  s = r(s, { type: 'openTool', tool: 'compare' })
+  assert.equal(s.activeId, c)
+  // จาก c (ยังเปล่า) ไป UNWRAP ที่ยังไม่มี doc → c เปลี่ยนเป็น unwrap แทนการสร้างเพิ่ม
+  s = r(s, { type: 'openTool', tool: 'unwrap' })
+  assert.equal(s.activeId, c)
+  assert.equal(activeDoc(s).tool, 'unwrap')
+  assert.equal(s.docs.length, 2)
+})
+t('openTool: tab เดียวที่ยังเปล่าเปลี่ยนเครื่องมือตามที่คลิก ไม่สร้าง tab เพิ่ม', () => {
+  let s = initialDocsState('format')
+  const id = s.docs[0].id
+  s = r(s, { type: 'openTool', tool: 'compare' })
+  assert.equal(s.docs.length, 1)
+  assert.equal(activeDoc(s).id, id)
+  assert.equal(activeDoc(s).tool, 'compare')
+  s = r(s, { type: 'openTool', tool: 'format' })
+  assert.equal(s.docs.length, 1)
+  assert.equal(activeDoc(s).tool, 'format')
 })
 done()
