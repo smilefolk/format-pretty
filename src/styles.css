@@ -752,12 +752,14 @@ body {
   border-right: 1px solid var(--border);
 }
 
-/* แถบปุ่มท้าย source pane (ไม่ใช่ toolbar ระดับหน้า) */
+/* แถบปุ่มท้าย pane (ไม่ใช่ toolbar ระดับหน้า) — min-height เท่าแถบที่มีปุ่ม (.btn 30.25 + padding 18 + เส้น 1)
+   ให้แถบที่มีแต่ meta (output ของ Formatter) สูงเท่ากัน pane สองฝั่งจะได้จบระดับเดียวกัน */
 .action-bar {
   flex: none;
   display: flex;
   align-items: center;
   gap: 8px;
+  min-height: 50px;
   padding: 9px 14px;
   border-top: 1px solid var(--border);
   background: var(--chrome);
