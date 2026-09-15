@@ -11,6 +11,7 @@ import useFilePicker from '../hooks/useFilePicker'
 import { INDENT_OPTIONS, VIEW_OPTIONS } from '../lib/constants'
 import { fixJson } from '../lib/fix'
 import { useT } from '../lib/i18n'
+import { unwrapNested } from '../lib/unwrap'
 import {
   formatBytes,
   getStats,
@@ -22,6 +23,8 @@ import {
 
 // ไม่ลอง auto-fix กับอินพุตที่ใหญ่กว่านี้ (ไบต์โดยประมาณ) กันหน้าหน่วงตอนพิมพ์
 const FIX_LIMIT = 256 * 1024
+// มุมมองโครงสร้างแกะสตริง JSON ในฟิลด์ให้ดู (#72) — ข้ามเมื่ออินพุตใหญ่กว่านี้ เพราะต้อง parse สตริงทุกตัวใน tree
+const TREE_UNWRAP_LIMIT = 256 * 1024
 
 export default function Formatter({
   input,
@@ -56,6 +59,13 @@ export default function Formatter({
 
   const output = useMemo(() => (result.ok ? stringify(value, indent) : ''), [result.ok, value, indent])
   const stats = useMemo(() => (result.ok ? getStats(value, output) : null), [result.ok, value, output])
+  // เฉพาะมุมมองโครงสร้าง: แกะสตริงที่ข้างในเป็น JSON ให้เห็นเป็น tree ซ้อน (ข้อมูลจริง/โค้ด/คัดลอก/สถิติไม่เปลี่ยน)
+  const tree = useMemo(() => {
+    if (!result.ok || view !== 'tree') return null
+    if (input.length > TREE_UNWRAP_LIMIT) return { value, fields: [] }
+    return unwrapNested(value)
+  }, [result.ok, view, input.length, value])
+  const treePaths = useMemo(() => tree?.fields.map((f) => f.path), [tree])
 
   // นำเข้า (ไฟล์ / วางทับทั้งหมด) = จุดเดียวที่ตั้งธง line ending; พิมพ์เพิ่มไม่เปลี่ยน
   const loadText = (text, name) => {
@@ -185,7 +195,11 @@ export default function Formatter({
                     )}
                   </p>
                 )}
-                {view === 'code' ? <CodeView code={output} /> : <JsonTree data={value} />}
+                {view === 'code' ? (
+                  <CodeView code={output} />
+                ) : (
+                  <JsonTree data={tree.value} unwrapped={treePaths} />
+                )}
               </div>
             )}
           </div>

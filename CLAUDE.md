@@ -170,7 +170,9 @@ result/output ที่หน้าถืออยู่ แล้วได้ o
   + เลขบรรทัด (gutter `aria-hidden`) + ไฮไลต์บรรทัดที่ผิด + drag & drop ไฟล์ (กรอบ dashed ระหว่างลาก);
   `ref.focusLine(n)` (ปุ่ม "ไปที่บรรทัด"), prop `dense` (Diff) / `wrap` (Unwrap) / `label` (aria-label — ต้องส่งเสมอ)
 - `CodeView` (ระบายสีด้วย `tokenize()` จาก `json.js`; เกิน 2,000 บรรทัดเรนเดอร์เฉพาะบรรทัดที่มองเห็น — tokenize ต่อบรรทัด
-  ให้ผลเท่ากับทั้งก้อนเพราะสตริง JSON ข้ามบรรทัดไม่ได้), `JsonTree` (พับ/ขยาย, pill นับรายการตาม lang)
+  ให้ผลเท่ากับทั้งก้อนเพราะสตริง JSON ข้ามบรรทัดไม่ได้), `JsonTree` (พับ/ขยาย, pill นับรายการตาม lang; prop `unwrapped` =
+  path แบบ `lib/path.js` root `''` ของโหนดที่เดิมเป็นสตริง JSON → ติด pill "สตริง" — Formatter มุมมองโครงสร้างส่ง
+  `unwrapNested(value)` ให้ (#72, ข้ามเมื่อ input > 256 KB) โค้ด/คัดลอก/สถิติยังใช้ข้อมูลจริง; Unwrap ส่ง `nested.fields`)
 - `ErrorCard` — การ์ด error แบบ 1b `{ title, message, line, column, onGoTo, onFix, children }` `role="alert"`;
   Formatter วางใต้ source pane, Unwrap วางในฝั่งผลลัพธ์พร้อม `<pre class="peeled">`
 - `CommandPalette` — ⌘K (ดูส่วน Action)
