@@ -987,6 +987,17 @@ textarea.input::placeholder {
   font-size: 11.5px;
 }
 
+/* pill บอกว่าโหนดนี้ของจริงเป็นสตริง JSON ที่แกะมาให้ดู (#72) — ข้อความบน --panel-2 ต้อง --muted-2 ขึ้นไป */
+.tree-unwrapped {
+  margin-right: 6px;
+  padding: 1px 7px;
+  border-radius: 99px;
+  background: var(--panel-2);
+  color: var(--muted-2);
+  font: 500 10px/1.6 var(--font-mono);
+  letter-spacing: 0.04em;
+}
+
 /* ---------- tokens ---------- */
 
 .tok-key {

@@ -51,6 +51,8 @@ export default function Unwrap({
         : { value: result.value, count: 0, fields: [] },
     [result, deep]
   )
+  // path ของฟิลด์ที่แกะ ให้ tree ติด pill "สตริง" เหมือนหน้า Formatter (#72)
+  const nestedPaths = useMemo(() => nested.fields.map((f) => f.path), [nested])
 
   // chain ชั้นที่แกะ: ชั้นนอก (string) ต่อด้วยฟิลด์ที่แกะได้ เรียงเลขต่อกัน
   const chain = [
@@ -230,7 +232,11 @@ export default function Unwrap({
                     {t(`พบ JSON ${result.merged} ก้อนต่อกัน — รวมเป็นอาร์เรย์เดียวให้แล้ว`, `Found ${result.merged} JSON chunks — merged into one array`)}
                   </p>
                 )}
-                {view === 'code' ? <CodeView code={output} /> : <JsonTree data={nested.value} />}
+                {view === 'code' ? (
+                  <CodeView code={output} />
+                ) : (
+                  <JsonTree data={nested.value} unwrapped={nestedPaths} />
+                )}
               </div>
             )}
           </div>
