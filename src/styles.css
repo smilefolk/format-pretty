@@ -243,11 +243,15 @@ body {
   min-height: 44px;
 }
 
+/* กว้างเท่า options panel (236px) ให้เส้นซ้ายต่อกับ .options-panel เป็นเส้นเดียว — จอแคบมีปุ่ม ☰ เพิ่ม
+   จึงใช้ min-width ให้ขยายได้ (ตอนนั้น panel เป็น drawer ไม่ต้องตรงกัน) */
 .top-bar-tools {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 0 12px;
+  justify-content: flex-end;
+  gap: 6px;
+  min-width: 236px;
+  padding: 0 10px;
   border-left: 1px solid var(--border);
 }
 
@@ -462,6 +466,9 @@ body {
 
 .options-panel-head {
   flex: none;
+  display: flex;
+  align-items: center;
+  min-height: 42px; /* เท่า .pane-head ให้เส้นต่อกัน */
   padding: 10px 14px;
   border-bottom: 1px solid var(--border);
 }
@@ -698,10 +705,13 @@ body {
   overflow: hidden;
 }
 
+/* สูงคงที่ 42px ทุกหัว (เท่า .options-panel-head) — ไม่งั้นหัวที่มีปุ่ม/ป้ายจะสูงกว่าหัวที่มีแต่ meta
+   แล้วเส้นขอบล่างของ pane ข้างกันไม่ต่อกัน */
 .pane-head {
   display: flex;
   align-items: center;
   gap: 9px;
+  min-height: 42px;
   padding: 9px 14px;
   border-bottom: 1px solid var(--border);
 }
@@ -1493,7 +1503,6 @@ textarea.input::placeholder {
 
 .compare-inputs .pane-head {
   padding: 8px 14px;
-  border-bottom-color: var(--border-soft);
 }
 
 .compare-page > .diff-panel {
