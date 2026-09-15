@@ -87,8 +87,11 @@ reducer ใน `lib/docs.js` เป็น pure function ทดสอบด้ว
 (debounce 300 ms, doc ที่เนื้อหารวม > 1 MB เก็บแต่ metadata + ธง `tooLarge`, quota เต็มแจ้งครั้งเดียว) อยู่ใน hook เท่านั้น
 state ระดับแอปที่ไม่อยู่ต่อเอกสาร: `theme` (`fp-theme`), `lang` (`fp-lang`), `toast`, `paletteOpen`
 
-เครื่องมือที่แสดงคือ `doc.tool` ของ doc ที่ active — คลิก rail = กลับไป doc ล่าสุดของเครื่องมือนั้น (`openTool`, MRU)
-หรือสร้างใหม่ถ้ายังไม่มี; `sendToFormatter` = เปิด doc `format` ใหม่ชื่อ "จาก unwrap" พร้อมเนื้อหา
+เครื่องมือที่แสดงคือ `doc.tool` ของ doc ที่ active — คลิก rail / ⌘K = reducer action `openTool`: กลับไป doc ล่าสุดของ
+เครื่องมือนั้น (MRU) หรือสร้างใหม่ถ้ายังไม่มี ยกเว้น doc ที่ active ยังเปล่า (`isBlankDoc`: ไม่มีเนื้อหา + ชื่อ default) จะเปลี่ยน
+`tool` ของ doc นั้นแทนเพื่อไม่ทิ้ง tab เปล่าไว้ (#67) — แต่ถ้า doc เปล่านั้นเป็น doc เดียวของเครื่องมือเดิม (rail สร้างให้เอง
+ไม่ได้มาจากกด +) และเป้าหมายมี doc อยู่แล้ว ถือว่าเปลี่ยนใจกลับ → ไป doc นั้นตามปกติ; `sendToFormatter` = เปิด doc `format`
+ใหม่ชื่อ "จาก unwrap" พร้อมเนื้อหา
 
 ### หน้า (`src/pages/`)
 

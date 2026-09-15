@@ -5,7 +5,6 @@ import {
   deserializeDocs,
   docsReducer,
   initialDocsState,
-  latestDocForTool,
   serializeDocs,
 } from '../lib/docs'
 
@@ -60,15 +59,9 @@ export default function useDocs({ notify } = {}) {
   const update = useCallback((id, patch) => dispatch({ type: 'update', id, patch }), [])
   const activate = useCallback((id) => dispatch({ type: 'activate', id }), [])
 
-  // คลิก rail (D1 b): กลับไป doc ล่าสุดของเครื่องมือนั้น ไม่มีก็สร้างใหม่
-  const openTool = useCallback(
-    (tool) => {
-      const latest = latestDocForTool(stateRef.current, tool)
-      if (latest) activate(latest.id)
-      else open(tool)
-    },
-    [activate, open]
-  )
+  // คลิก rail (D1 b): กลับไป doc ล่าสุดของเครื่องมือนั้น ไม่มีก็สร้างใหม่ — doc เปล่าที่ active เปลี่ยน
+  // เครื่องมือแทน (#67) กติกาทั้งหมดอยู่ใน reducer (ทดสอบด้วย node)
+  const openTool = useCallback((tool) => dispatch({ type: 'openTool', tool }), [])
 
   return {
     docs: state.docs,

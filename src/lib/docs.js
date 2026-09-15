@@ -14,6 +14,11 @@ const NAME_PREFIX = 'เอกสาร '
 // ชื่อที่ระบบตั้งให้ ("เอกสาร n") — เปิดไฟล์ลง doc ชื่อแบบนี้จะเปลี่ยนเป็นชื่อไฟล์ ถ้าผู้ใช้ตั้งชื่อเองแล้วไม่ทับ
 export const isDefaultName = (name) => /^เอกสาร \d+$/.test(name ?? '')
 
+// doc ที่ยังไม่ได้ใช้: ไม่มีเนื้อหาและชื่อยังเป็นค่าเริ่มต้น (ปรับตัวเลือกไปบ้างก็ยังนับว่าเปล่า)
+// doc ที่ติดธง tooLarge เนื้อหาว่างเพราะไม่ได้บันทึก ไม่ใช่เปล่า
+export const isBlankDoc = (doc) =>
+  !doc.tooLarge && !doc.input && !doc.left && !doc.right && isDefaultName(doc.name)
+
 // ชื่อไม่ซ้ำกับ doc อื่น — ซ้ำแล้วต่อท้าย (2), (3), … (เช่นเปิดไฟล์ชื่อเดียวกันสองครั้ง)
 export function uniqueName(docs, name, excludeId) {
   const taken = new Set(docs.filter((d) => d.id !== excludeId).map((d) => d.name))
@@ -134,6 +139,28 @@ export function docsReducer(state, action) {
       // ปิดอันที่ active → ไปทางขวา ถ้าไม่มีก็ซ้าย
       const next = docs[Math.min(index, docs.length - 1)]
       return { docs, activeId: next.id, recent: touch(recent, next.id) }
+    }
+
+    // คลิก rail / ⌘K สลับเครื่องมือ (D1 b): กลับไป doc ล่าสุดของเครื่องมือนั้น ไม่มีก็สร้างใหม่
+    // ยกเว้น doc ที่ active ยังเปล่า (#67) → เปลี่ยนเครื่องมือของ doc นั้นแทน จะได้ไม่ทิ้ง tab เปล่าไว้
+    // แต่ถ้า doc เปล่านั้นเป็น doc เดียวของเครื่องมือเดิม (rail สร้างให้เองตอนคลิกครั้งก่อน ไม่ได้มาจากกด +)
+    // และเครื่องมือเป้าหมายมี doc อยู่แล้ว ถือว่าผู้ใช้แค่เปลี่ยนใจกลับ → ไป doc นั้นตามปกติ
+    case 'openTool': {
+      const { tool } = action
+      if (!DOC_TOOLS.includes(tool)) return state
+      const current = activeDoc(state)
+      if (current?.tool === tool) return state
+      const latest = latestDocForTool(state, tool)
+      const fromPlus = state.docs.some((d) => d.id !== current?.id && d.tool === current?.tool)
+      if (current && isBlankDoc(current) && (!latest || fromPlus)) {
+        return docsReducer(state, {
+          type: 'update',
+          id: current.id,
+          patch: { ...DOC_DEFAULTS, tool },
+        })
+      }
+      if (latest) return docsReducer(state, { type: 'activate', id: latest.id })
+      return docsReducer(state, { type: 'open', doc: createDoc(tool, {}, state.docs) })
     }
 
     case 'replace':
