@@ -61,10 +61,11 @@ python3 scripts/check-css.py  # หา CSS class ที่ไม่มีใค�
 build เป็นไฟล์ static แล้วเสิร์ฟด้วย nginx (multi-stage: `node:24-alpine` → `nginx:1.30-alpine`)
 
 ```bash
-docker compose up -d --build   # http://localhost:8080 (เปลี่ยนพอร์ตด้วย PORT=3000 docker compose up -d)
+docker compose up -d   # build + เสิร์ฟที่ http://localhost:8080 (เปลี่ยนพอร์ต: PORT=3000 docker compose up -d)
 docker compose down
 ```
 
+- compose ตั้ง `pull_policy: build` ไว้ `up` จึง build ใหม่ให้เสมอ (ไม่ต้องจำ `--build` — ถ้าไม่มีอะไรแก้ layer cache ทำให้ใช้เวลา ~2 วินาที)
 - คอนเทนเนอร์รันแบบ read-only filesystem, `cap_drop: ALL` (เหลือเฉพาะที่ nginx ต้องใช้จริง) และ `no-new-privileges`
 - `Content-Security-Policy` ตั้ง `connect-src 'none'` — แอปไม่ยิง request ออกนอกเครื่องอยู่แล้ว ถ้ามีโค้ดใหม่เผลอเรียก
   fetch เบราว์เซอร์จะบล็อกให้เห็นทันที (header ทั้งชุดอยู่ใน `nginx-security-headers.conf`)

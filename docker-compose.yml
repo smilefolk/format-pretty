@@ -1,6 +1,10 @@
 services:
   web:
     build: .
+    # build ใหม่ทุกครั้งที่ up — ไม่งั้น `docker compose up -d` เปล่า ๆ จะใช้ image เดิมที่มีอยู่แล้ว
+    # (เห็นแค่ "Container Running") แล้วโค้ดที่เพิ่งแก้จะไม่ขึ้น ต้องจำว่าต้องใส่ --build ทุกที
+    # layer ที่ไม่มีอะไรเปลี่ยนใช้ cache อยู่แล้ว ตอนไม่มีการแก้ไขใช้เวลา ~2 วินาที
+    pull_policy: build
     image: format-pretty:latest
     container_name: format-pretty
     ports:
