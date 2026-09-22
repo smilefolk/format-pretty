@@ -56,6 +56,21 @@ node scripts/check-lib.mjs    # ทดสอบ src/lib ด้วย node
 python3 scripts/check-css.py  # หา CSS class ที่ไม่มีใครใช้
 ```
 
+## Docker
+
+build เป็นไฟล์ static แล้วเสิร์ฟด้วย nginx (multi-stage: `node:24-alpine` → `nginx:1.30-alpine`)
+
+```bash
+docker compose up -d --build   # http://localhost:8080 (เปลี่ยนพอร์ตด้วย PORT=3000 docker compose up -d)
+docker compose down
+```
+
+- คอนเทนเนอร์รันแบบ read-only filesystem, `cap_drop: ALL` (เหลือเฉพาะที่ nginx ต้องใช้จริง) และ `no-new-privileges`
+- `Content-Security-Policy` ตั้ง `connect-src 'none'` — แอปไม่ยิง request ออกนอกเครื่องอยู่แล้ว ถ้ามีโค้ดใหม่เผลอเรียก
+  fetch เบราว์เซอร์จะบล็อกให้เห็นทันที (header ทั้งชุดอยู่ใน `nginx-security-headers.conf`)
+- ไฟล์ใน `/assets/` และ `/fonts/` cache 1 ปีแบบ immutable ส่วน `index.html` เป็น `no-cache` เพื่อให้ deploy ใหม่
+  ไม่ค้างอยู่กับ asset ชุดเก่า
+
 ## โครงสร้าง
 
 ```

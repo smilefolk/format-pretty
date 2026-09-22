@@ -6,10 +6,23 @@ services:
     ports:
       - "${PORT:-8080}:80"
     restart: unless-stopped
-    healthcheck:
-      # nginx:alpine ไม่มี curl ติดมา ใช้ wget ของ busybox แทน
-      test: ["CMD", "wget", "-qO", "/dev/null", "http://127.0.0.1/"]
-      interval: 30s
-      timeout: 3s
-      retries: 3
-      start_period: 5s
+
+    # healthcheck ย้ายไปอยู่ใน Dockerfile แล้ว (docker run เปล่า ๆ ก็ได้ด้วย)
+
+    # เสิร์ฟไฟล์ static อย่างเดียว ไม่ต้องเขียนอะไรลง filesystem ของ container
+    read_only: true
+    tmpfs:
+      # nginx เขียนไฟล์ชั่วคราวลงที่นี่ — ปล่อยให้เป็นของ root แล้ว master chown ให้ worker เอง
+      # (ตั้ง uid=101 ที่ tmpfs ไม่ได้: root ถูก cap_drop DAC_OVERRIDE ไปแล้ว จะสร้าง client_temp ไม่ได้)
+      - /var/cache/nginx
+      # /var/run เป็น symlink ไป /run — nginx.pid อยู่ตรงนั้น
+      - /run
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    cap_add:
+      - CHOWN              # entrypoint ตั้งเจ้าของไฟล์ชั่วคราวตอนเริ่ม
+      - SETUID             # master ลดสิทธิ์ worker ลงเป็น user nginx
+      - SETGID
+      - NET_BIND_SERVICE   # bind พอร์ต 80 ใน container
