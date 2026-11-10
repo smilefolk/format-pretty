@@ -1,4 +1,5 @@
 import { createContext, useContext } from 'react'
+import { langFromSearch, searchForLang } from './seo'
 
 // ระบบ label สองภาษา — ไทยเป็นหลัก อังกฤษเป็น sub-label ตัวเล็ก (โหมด th)
 // หรืออังกฤษล้วนในช่องหลัก (โหมด en) — App ถือ state `lang` แล้วส่งลงมาทาง Provider
@@ -16,8 +17,11 @@ export function useT() {
   return (th, en) => (lang === 'en' && en ? en : th)
 }
 
-// อ่าน/เขียน localStorage แบบไม่พัง — ใน SSR หรือ private mode อาจไม่มีหรือ throw
+// ภาษาเริ่มต้น: `?lang=` ใน URL มาก่อน (ลิงก์ /?lang=en ที่ Google index แยกต้องเปิดเป็นอังกฤษเสมอ
+// ไม่ว่าเครื่องนั้นเคยเลือกอะไรไว้) แล้วค่อย localStorage — ใน SSR ไม่มี location, private mode อาจ throw
 export function readLang() {
+  const fromUrl = typeof location === 'undefined' ? null : langFromSearch(location.search)
+  if (fromUrl) return fromUrl
   try {
     const value = localStorage.getItem(STORAGE_KEY)
     return LANGS.includes(value) ? value : 'th'
@@ -31,6 +35,12 @@ export function writeLang(lang) {
     localStorage.setItem(STORAGE_KEY, lang)
   } catch {
     /* เก็บไม่ได้ก็ใช้ค่าในหน่วยความจำไปจนกว่าจะ refresh */
+  }
+  // URL ตามภาษาที่เลือก (อังกฤษ = ?lang=en, ไทย = URL หลัก) — คัดลอกลิงก์ไปให้คนอื่นแล้วได้ภาษาเดียวกัน
+  // replaceState ไม่เพิ่ม history และไม่โหลดหน้าใหม่
+  const search = searchForLang(location.search, lang)
+  if (search !== location.search) {
+    history.replaceState(history.state, '', `${location.pathname}${search}${location.hash}`)
   }
 }
 

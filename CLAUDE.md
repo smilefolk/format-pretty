@@ -9,8 +9,11 @@ npm run dev      # dev server บน http://localhost:5173 (เปิดเบ�
 npm run build    # build ไป dist/
 npm run preview  # เสิร์ฟ dist/ ที่ build แล้ว
 
-node scripts/check-lib.mjs    # node test ของ src/lib (json / diff / unwrap / fix / commands / docs) ไม่ต้องเปิดเบราว์เซอร์
+node scripts/check-lib.mjs    # node test ของ src/lib (json / diff / unwrap / fix / commands / docs / seo) ไม่ต้องเปิดเบราว์เซอร์
 python3 scripts/check-css.py  # ทุก class selector ใน styles.css ต้องมี JSX ใช้ (กัน CSS ตาย)
+node scripts/render-images.mjs  # สร้าง favicon.ico / apple-touch-icon.png / og-image.png ใน public/ ด้วย Chrome headless
+
+SITE_URL=https://… npm run build  # URL จริงสำหรับ canonical / hreflang / og:image / sitemap.xml (ไม่ตั้งก็ build ได้)
 ```
 
 ไม่มี linter และไม่มี test runner ติดตั้งไว้ — สคริปต์ใน `scripts/` ใช้แค่ node/python ที่มีอยู่แล้ว ไม่เพิ่ม dependency
@@ -63,6 +66,17 @@ rm -f ./__check.jsx
 
 ดีไซน์คือ "Workbench" (handoff option 2a): shell เต็ม viewport, แท็บเอกสารหลายอัน, panel ตัวเลือกด้านขวา,
 label สองภาษา (ไทยหลัก + อังกฤษ mono ตัวเล็ก), ⌘K
+
+### SEO (`src/lib/seo.js` + plugin `seo()` ใน `vite.config.js`)
+
+`index.html` มีแค่ marker `<!--seo:head-->` / `<!--seo:noscript-->` — plugin แทนด้วยแท็กของภาษานั้น (title, description,
+canonical + hreflang, Open Graph, JSON-LD `WebApplication`; noscript = คำอธิบาย + ลิงก์อีกภาษา วางใน `#root` ให้ React ล้างตอน mount)
+แล้ว build ได้ `index.html` (ไทย) + `index.en.html` + `robots.txt` (+ `sitemap.xml` เมื่อมี `SITE_URL`) — marker หายหรือ
+`SITE_URL` ไม่ใช่ http(s) จะ throw ให้ build ล้ม; แท็กที่ต้องใช้ URL เต็ม (canonical, hreflang, og:url, og:image) ใส่เฉพาะเมื่อมี `SITE_URL`
+ภาษาไทย = `/` (URL หลัก), อังกฤษ = `/?lang=en`: nginx `map $arg_lang` เสิร์ฟ `index.en.html`, dev server เลือกตาม `?lang`
+ของ request; `readLang()` อ่าน `?lang` ก่อน localStorage และ `writeLang()` เขียน URL ตามด้วย `replaceState`
+(คงพารามิเตอร์อื่น/hash), `App` ตั้ง `document.title` ตามภาษา — **อย่าแก้ canonical ด้วย JS** (Google ไม่แนะนำ) ให้ `<head>`
+ที่เสิร์ฟมาตรงกับ URL ตั้งแต่ต้นแทน; nginx ตอบ 404 (body เป็นแอป) กับ path ที่ไม่มีไฟล์ กัน soft 404
 
 ### Shell (`src/components/shell/`)
 
@@ -159,6 +173,8 @@ result/output ที่หน้าถืออยู่ แล้วได้ o
 - `fix.js` — `fixJson(text)` แก้ JSON แบบกลไกจากตำแหน่ง error ของ `parseJson` (จุลภาคท้าย / จุลภาคซ้ำ / single quote /
   คีย์ไม่มี quote) re-parse ยืนยันทุกรอบ ≤ 5 รอบ คืน `{ fixed, applied[] }` หรือ `null` — ห้ามคืนข้อความที่ parse ไม่ผ่าน;
   Formatter โชว์ปุ่ม "แก้ให้อัตโนมัติ" เฉพาะเมื่อได้ผล (input ≤ 256 KB) และไม่ apply เอง (D7)
+- `seo.js` — ข้อความ SEO ต่อภาษา (`SEO.th` / `SEO.en`) + `renderPage(html, lang, siteUrl)` / `renderRobots` / `renderSitemap`
+  สำหรับ build และ `langFromSearch` / `searchForLang` สำหรับ i18n — ไม่มีโค้ด node เข้า bundle ได้ (ดูส่วน SEO)
 - `path.js` — `childPath(path, key)` สร้าง path `$.a[0]["k y"]` ใช้ร่วมกันใน `diff.js` (root `$`) และ `unwrap.js` (root `''`)
 - `docs.js` / `commands.js` / `samples.js` / `constants.js` (`INDENT_OPTIONS`, `VIEW_OPTIONS`) / `i18n.jsx` — ดูข้างบน
 

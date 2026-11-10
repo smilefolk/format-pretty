@@ -71,6 +71,21 @@ docker compose down
   fetch เบราว์เซอร์จะบล็อกให้เห็นทันที (header ทั้งชุดอยู่ใน `nginx-security-headers.conf`)
 - ไฟล์ใน `/assets/` และ `/fonts/` cache 1 ปีแบบ immutable ส่วน `index.html` เป็น `no-cache` เพื่อให้ deploy ใหม่
   ไม่ค้างอยู่กับ asset ชุดเก่า
+- URL ที่ใช้ได้มีแค่ `/` กับ `/?lang=en` และไฟล์ที่มีจริง — path อื่นตอบ `404` (แต่ยังแสดงแอป) กัน Google เห็นเป็นหน้าซ้ำ
+
+## SEO
+
+- ตั้ง **`SITE_URL`** เป็น URL จริงของเว็บตอน build: `SITE_URL=https://json.example.com docker compose up -d`
+  (หรือ `npm run build` / ใส่ใน `.env.production`) — ใช้กับ canonical, hreflang, `og:url`, `og:image` และ `sitemap.xml`
+  ไม่ตั้งก็ build ได้ แต่แท็กพวกนั้นและ `sitemap.xml` จะไม่มี (`robots.txt` มีเสมอ)
+- หน้าแรกมีสองภาษา: `/` = ไทย, `/?lang=en` = อังกฤษ — build ได้ `index.html` กับ `index.en.html` ที่ `<head>`
+  (title / description / Open Graph / JSON-LD) เป็นภาษานั้น nginx เลือกไฟล์ตาม `?lang` และแอปเปิดภาษาตาม URL;
+  กด TH/EN ในหน้าแล้ว URL เปลี่ยนตาม (คัดลอกลิงก์ไปให้คนอื่นได้ภาษาเดียวกัน) — โฮสต์อื่นที่ไม่ใช่ nginx ชุดนี้ต้องตั้งกฎเดียวกัน
+- ข้อความ SEO ทั้งหมดอยู่ที่ `src/lib/seo.js` ที่เดียว; ไอคอนและรูปแชร์ (`public/og-image.png` 1200×630)
+  สร้างใหม่ได้ด้วย `node scripts/render-images.mjs` (ใช้ Chrome ในเครื่อง)
+- ตอนปิด JavaScript (และ crawler ที่ไม่รัน JS) เห็นคำอธิบายเครื่องมือแทนหน้าว่าง
+- Lighthouse ผ่าน Docker ได้ SEO 92 เพราะ audit `robots-txt` ดาวน์โหลดไฟล์ผ่าน `fetch` ในหน้า ซึ่ง CSP
+  `connect-src 'none'` บล็อกไว้ — crawler จริงขอ `robots.txt` ตรง ๆ ไม่โดน (บน `vite preview` ที่ไม่มี CSP ได้ 100)
 
 ## โครงสร้าง
 
@@ -92,10 +107,12 @@ src/
     unwrap.js           แกะสตริง JSON (ชั้นนอก + ในฟิลด์)
     fix.js              แก้ JSON ให้อัตโนมัติ
     commands.js         registry ของคำสั่ง ⌘K
+    seo.js              <head> / noscript ต่อภาษา, robots.txt, sitemap.xml (ใช้ตอน build ผ่าน vite.config.js)
     docs.js · i18n.jsx · samples.js · path.js · constants.js
+public/                 favicon · apple-touch-icon · og-image (สร้างด้วย scripts/render-images.mjs)
 public/fonts/           IBM Plex Sans Thai + JetBrains Mono (self-host, OFL)
 docs/                   แผนงาน redesign
-scripts/                check-lib.mjs · check-css.py
+scripts/                check-lib.mjs · check-css.py · render-images.mjs
 ```
 
 ตัวตรวจไวยากรณ์เขียนเองเพราะข้อความ error ของ `JSON.parse` ในเบราว์เซอร์มักไม่บอกตำแหน่ง

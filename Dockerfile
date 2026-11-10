@@ -12,6 +12,8 @@ RUN npm ci --no-audit --no-fund
 COPY index.html vite.config.js ./
 COPY public ./public
 COPY src ./src
+# URL จริงของเว็บสำหรับ canonical / hreflang / og:image / sitemap.xml (ดู src/lib/seo.js) — ว่างได้
+ARG SITE_URL=""
 RUN npm run build
 
 # ---- ขั้นตอนเสิร์ฟไฟล์ static ----
