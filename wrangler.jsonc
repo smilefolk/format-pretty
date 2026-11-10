@@ -1,0 +1,24 @@
+// Cloudflare Workers + static assets — deploy: `npm run deploy` (ดู README หัวข้อ Cloudflare)
+// ใช้ wrangler ผ่าน npx (เวอร์ชันระบุใน package.json scripts) ไม่ได้ติดตั้งเป็น dependency
+{
+  "name": "format-pretty",
+  "main": "worker/index.js",
+  "compatibility_date": "2026-11-10",
+
+  // build ก่อน dev/deploy ทุกครั้ง — SITE_URL = URL จริงบน Cloudflare (canonical / hreflang / og:image / sitemap)
+  "build": {
+    "command": "SITE_URL=https://format-pretty.lotto-thai.workers.dev npm run build"
+  },
+
+  "assets": {
+    "directory": "./dist",
+    "binding": "ASSETS",
+    // Worker ทำงานเฉพาะหน้าแรก (เลือก index.html / index.en.html ตาม ?lang) — ไฟล์อื่นไม่ผ่าน Worker
+    "run_worker_first": ["/"],
+    // path ที่ไม่มีไฟล์ = 404 + dist/404.html (หน้าแอป) เหมือน nginx — ไม่ใช่ SPA fallback ที่ตอบ 200 (soft 404)
+    "not_found_handling": "404-page"
+  },
+
+  // แอปไม่ส่งข้อมูลออกนอกเครื่อง — ไม่ส่ง usage metrics ของ wrangler ด้วย
+  "send_metrics": false
+}

@@ -14,6 +14,9 @@ python3 scripts/check-css.py  # ทุก class selector ใน styles.css ต�
 node scripts/render-images.mjs  # สร้าง favicon.ico / apple-touch-icon.png / og-image.png ใน public/ ด้วย Chrome headless
 
 SITE_URL=https://… npm run build  # URL จริงสำหรับ canonical / hreflang / og:image / sitemap.xml (ไม่ตั้งก็ build ได้)
+
+npm run deploy   # Cloudflare: wrangler build (SITE_URL ใน wrangler.jsonc) + deploy — ต้อง `npx wrangler login` ก่อน
+npm run cf:dev   # จำลอง Cloudflare (Worker + assets + _headers) ที่ http://localhost:8787 ไม่ต้อง login
 ```
 
 ไม่มี linter และไม่มี test runner ติดตั้งไว้ — สคริปต์ใน `scripts/` ใช้แค่ node/python ที่มีอยู่แล้ว ไม่เพิ่ม dependency
@@ -77,6 +80,17 @@ canonical + hreflang, Open Graph, JSON-LD `WebApplication`; noscript = คำอ
 ของ request; `readLang()` อ่าน `?lang` ก่อน localStorage และ `writeLang()` เขียน URL ตามด้วย `replaceState`
 (คงพารามิเตอร์อื่น/hash), `App` ตั้ง `document.title` ตามภาษา — **อย่าแก้ canonical ด้วย JS** (Google ไม่แนะนำ) ให้ `<head>`
 ที่เสิร์ฟมาตรงกับ URL ตั้งแต่ต้นแทน; nginx ตอบ 404 (body เป็นแอป) กับ path ที่ไม่มีไฟล์ กัน soft 404
+
+### Deploy: Docker (nginx) และ Cloudflare (Workers + static assets)
+
+สอง target ทำงานเหมือนกัน: `/` = ไทย, `/?lang=en` = `index.en.html`, path ที่ไม่มีไฟล์ = 404 พร้อมหน้าแอป, header ความปลอดภัย
+ชุดเดียวกัน, `/assets/*` + `/fonts/*` cache 1 ปี immutable — แก้ฝั่งหนึ่งต้องแก้อีกฝั่ง
+- Docker: `nginx.conf` (`map $arg_lang`) + `nginx-security-headers.conf`
+- Cloudflare: `wrangler.jsonc` (wrangler ผ่าน `npx` เวอร์ชันระบุใน npm script — ผู้ใช้เลือกไม่เพิ่มเป็น dependency และไม่ใช้ `cf` CLI
+  ที่ต้องเพิ่ม `@cloudflare/vite-plugin`), `worker/index.js` รันเฉพาะ `/` (`run_worker_first`) เลือกไฟล์ด้วย `langFromSearch` และ
+  `env.ASSETS.fetch('/index.en')` (html_handling ทำให้ `/index.en.html` ได้ 307), `public/_headers` (Cloudflare ใช้กับ response
+  ที่ Worker คืนจาก `env.ASSETS` ด้วย — ถ้า Worker สร้าง response เองต้องใส่ header เอง), `not_found_handling: "404-page"` ใช้
+  `404.html` ที่ plugin `seo()` สร้าง; `headers.test.mjs` ตรวจว่า `_headers` ตรงกับ nginx
 
 ### Shell (`src/components/shell/`)
 

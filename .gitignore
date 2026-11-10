@@ -3,6 +3,8 @@ dist
 dist-ssr
 *.local
 .env*
+# state ของ wrangler dev (Cloudflare)
+.wrangler/
 
 # เครื่องมือ/ระบบ
 .DS_Store

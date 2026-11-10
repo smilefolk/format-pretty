@@ -1,0 +1,18 @@
+# header ของ static assets บน Cloudflare (Workers) — ไฟล์นี้ Cloudflare อ่านเป็น config ไม่เสิร์ฟออกไป
+# ค่าความปลอดภัยต้องตรงกับ nginx-security-headers.conf (scripts/lib-tests/headers.test.mjs ตรวจให้)
+# หน้า / กับ /?lang=en ผ่าน Worker (worker/index.js) แต่ Worker คืน response จาก env.ASSETS ตรง ๆ จึงได้ header ชุดนี้ด้วย
+# (ถ้าวันหลัง Worker สร้าง response เอง ต้องใส่ header เองใน Worker — กฎในไฟล์นี้ไม่ครอบ response ที่ Worker สร้าง)
+/*
+  Content-Security-Policy: default-src 'self'; base-uri 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'none'; object-src 'none'; frame-ancestors 'none'; form-action 'none'
+  X-Content-Type-Options: nosniff
+  X-Frame-Options: DENY
+  Referrer-Policy: no-referrer
+  Cross-Origin-Opener-Policy: same-origin
+  Permissions-Policy: camera=(), microphone=(), geolocation=(), browsing-topics=()
+
+# ชื่อไฟล์มี hash จาก vite / ฟอนต์ชื่อคงที่ (เปลี่ยนไฟล์ฟอนต์ต้องเปลี่ยนชื่อ) — cache ยาวได้
+/assets/*
+  Cache-Control: public, max-age=31536000, immutable
+
+/fonts/*
+  Cache-Control: public, max-age=31536000, immutable
