@@ -1,6 +1,11 @@
 services:
   web:
-    build: .
+    build:
+      context: .
+      args:
+        # URL จริงของเว็บ (เช่น SITE_URL=https://json.example.com docker compose up -d) — ไม่ตั้งก็ได้
+        # แต่จะไม่มี canonical / og:image / sitemap.xml
+        SITE_URL: ${SITE_URL:-}
     # build ใหม่ทุกครั้งที่ up — ไม่งั้น `docker compose up -d` เปล่า ๆ จะใช้ image เดิมที่มีอยู่แล้ว
     # (เห็นแค่ "Container Running") แล้วโค้ดที่เพิ่งแก้จะไม่ขึ้น ต้องจำว่าต้องใส่ --build ทุกที
     # layer ที่ไม่มีอะไรเปลี่ยนใช้ cache อยู่แล้ว ตอนไม่มีการแก้ไขใช้เวลา ~2 วินาที

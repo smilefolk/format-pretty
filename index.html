@@ -3,15 +3,18 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>FormatPritty — JSON Formatter</title>
-    <meta name="description" content="FormatPritty — จัดรูปแบบ ตรวจสอบ และย่อขนาด JSON ได้ในเบราว์เซอร์" />
+    <!-- title / description / canonical / hreflang / Open Graph / JSON-LD ต่อภาษา — สร้างจาก src/lib/seo.js ตอน build -->
+    <!--seo:head-->
     <!-- preload เฉพาะน้ำหนักที่ใช้ตั้งแต่เฟรมแรก น้ำหนักอื่นโหลดตาม @font-face ตอนถูกใช้ -->
     <link rel="preload" href="/fonts/IBMPlexSansThai-Regular.woff2" as="font" type="font/woff2" crossorigin />
     <link rel="preload" href="/fonts/JetBrainsMono-Regular.woff2" as="font" type="font/woff2" crossorigin />
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>{ }</text></svg>" />
+    <!-- ไอคอนสร้างด้วย scripts/render-images.mjs -->
+    <link rel="icon" href="/favicon.ico" sizes="48x48" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root"><!--seo:noscript--></div>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>

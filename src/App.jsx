@@ -9,6 +9,7 @@ import { ActionsContext } from './hooks/useActions'
 import useDocs from './hooks/useDocs'
 import { isDefaultName } from './lib/docs'
 import { LangContext, readLang, writeLang } from './lib/i18n'
+import { SEO } from './lib/seo'
 
 // อ่านธีมแบบไม่พัง — SSR / private mode อาจไม่มี localStorage
 function readTheme() {
@@ -42,6 +43,8 @@ export default function App() {
 
   useEffect(() => {
     document.documentElement.lang = lang
+    // <head> ที่เสิร์ฟมาตรงกับ URL อยู่แล้ว (index.html / index.en.html) — ตรงนี้ให้ชื่อแท็บตามเมื่อสลับภาษาในหน้า
+    document.title = SEO[lang].title
     writeLang(lang)
   }, [lang])
 

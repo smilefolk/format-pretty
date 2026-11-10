@@ -171,6 +171,23 @@ body {
   font: 14px/1.5 var(--font-ui);
 }
 
+/* เนื้อหาตอนปิด JavaScript — <noscript> ใน #root สร้างจาก lib/seo.js (React ล้างทิ้งตอน mount) */
+.noscript {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 48px 24px;
+  font-size: 15px;
+  line-height: 1.7;
+}
+
+.noscript h1 {
+  line-height: 1.35;
+}
+
+.noscript a {
+  color: var(--accent);
+}
+
 /* ---------- shell (components/shell) ---------- */
 
 /* โครงเต็ม viewport ไม่มี max-width — ความลึกมาจากขั้นของ surface + เส้น 1px ไม่มีเงา */
