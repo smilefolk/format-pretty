@@ -9,8 +9,10 @@ import {
 } from './src/lib/seo.js'
 
 // SEO (src/lib/seo.js): แทน <!--seo:head--> / <!--seo:noscript--> ใน index.html ตามภาษา
-// build ได้ index.html (ไทย) + index.en.html (nginx เสิร์ฟให้ /?lang=en) + robots.txt (+ sitemap.xml ถ้ามี SITE_URL)
+// build ได้ index.html (ไทย) + index.en.html (nginx / Worker เสิร์ฟให้ /?lang=en) + 404.html (หน้าไทยเดียวกัน
+// ให้ Cloudflare ตอบ path ที่ไม่มีไฟล์ — not_found_handling ใน wrangler.jsonc) + robots.txt (+ sitemap.xml ถ้ามี SITE_URL)
 function seo(siteUrl) {
+  let thaiHtml = null
   let englishHtml = null
   return {
     name: 'format-pretty:seo',
@@ -25,12 +27,14 @@ function seo(siteUrl) {
           return renderPage(html, lang ?? 'th', siteUrl)
         }
         englishHtml = renderPage(html, 'en', siteUrl)
-        return renderPage(html, 'th', siteUrl)
+        thaiHtml = renderPage(html, 'th', siteUrl)
+        return thaiHtml
       },
     },
     generateBundle() {
       if (!englishHtml) throw new Error('seo: ยังไม่ได้ render index.html — ลำดับ plugin ผิด')
       this.emitFile({ type: 'asset', fileName: 'index.en.html', source: englishHtml })
+      this.emitFile({ type: 'asset', fileName: '404.html', source: thaiHtml })
       this.emitFile({ type: 'asset', fileName: 'robots.txt', source: renderRobots(siteUrl) })
       if (siteUrl) {
         this.emitFile({ type: 'asset', fileName: 'sitemap.xml', source: renderSitemap(siteUrl) })

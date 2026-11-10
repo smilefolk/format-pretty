@@ -73,6 +73,24 @@ docker compose down
   ไม่ค้างอยู่กับ asset ชุดเก่า
 - URL ที่ใช้ได้มีแค่ `/` กับ `/?lang=en` และไฟล์ที่มีจริง — path อื่นตอบ `404` (แต่ยังแสดงแอป) กัน Google เห็นเป็นหน้าซ้ำ
 
+## Cloudflare
+
+deploy เป็น Worker + static assets (workers.dev) ด้วย wrangler ผ่าน `npx` — ไม่ได้ติดตั้งเป็น dependency
+
+```bash
+npx --yes wrangler@4.159.0 login   # ครั้งแรกครั้งเดียว — เปิดเบราว์เซอร์ให้อนุญาต
+npm run deploy                     # build (SITE_URL อยู่ใน wrangler.jsonc) + อัพโหลด
+npm run cf:dev                     # จำลอง Cloudflare ในเครื่องที่ http://localhost:8787
+```
+
+- `wrangler.jsonc`: เสิร์ฟ `dist/` เป็น static assets; Worker (`worker/index.js`) ทำงานเฉพาะ `/` เพื่อเลือก
+  `index.en.html` ให้ `/?lang=en` (แบบเดียวกับ nginx) — ไฟล์อื่นไม่ผ่าน Worker จึงไม่นับเป็น request ของ Worker
+- path ที่ไม่มีไฟล์ตอบ `404` + `404.html` (หน้าแอป) เหมือน nginx
+- header ความปลอดภัยและ cache อยู่ `public/_headers` — ค่าต้องตรงกับ `nginx-security-headers.conf`
+  (`node scripts/check-lib.mjs` ตรวจให้)
+- เปลี่ยนโดเมน: แก้ `SITE_URL` ใน `build.command` ของ `wrangler.jsonc` แล้ว `npm run deploy`
+- `send_metrics: false` — wrangler ไม่ส่ง usage metrics
+
 ## SEO
 
 - ตั้ง **`SITE_URL`** เป็น URL จริงของเว็บตอน build: `SITE_URL=https://json.example.com docker compose up -d`
@@ -109,7 +127,8 @@ src/
     commands.js         registry ของคำสั่ง ⌘K
     seo.js              <head> / noscript ต่อภาษา, robots.txt, sitemap.xml (ใช้ตอน build ผ่าน vite.config.js)
     docs.js · i18n.jsx · samples.js · path.js · constants.js
-public/                 favicon · apple-touch-icon · og-image (สร้างด้วย scripts/render-images.mjs)
+public/                 favicon · apple-touch-icon · og-image (สร้างด้วย scripts/render-images.mjs) · _headers (Cloudflare)
+worker/                 Worker ของ Cloudflare (เลือกภาษาหน้าแรกตาม ?lang)
 public/fonts/           IBM Plex Sans Thai + JetBrains Mono (self-host, OFL)
 docs/                   แผนงาน redesign
 scripts/                check-lib.mjs · check-css.py · render-images.mjs
